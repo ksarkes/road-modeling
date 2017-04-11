@@ -5,8 +5,13 @@ using UnityEditor;
 using UnityEngine;
 
 [CanEditMultipleObjects]
-public class Node : MonoBehaviour {
+public class Node : MonoBehaviour
+{
+
     public static int MaxID = 1;
+
+    public int id;
+
     public Node()
     {
         MaxID++;
@@ -23,8 +28,7 @@ public class Node : MonoBehaviour {
 
     }
 
-    public int id;
 
     public List<Node> connectedNodes = new List<Node>();
-      
+
 }

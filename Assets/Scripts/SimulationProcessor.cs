@@ -7,21 +7,25 @@ using UnityEngine.UI;
 
 public class SimulationProcessor : MonoBehaviour
 {
+    public static SimulationProcessor Instance;
+
+    private int timeStepsPerFrame = 3;
+    public long currentTimeStep = 0;
 
     public GameObject linePrefab;
     public Transform linesParent;
-    public List<Node> nodes = new List<Node>();
-    private List<CarGenerator> generators = new List<CarGenerator>();
-    private List<TrafficLight> lights = new List<TrafficLight>();
-    private HashSet<Car> cars = new HashSet<Car>();
-    public static SimulationProcessor Instance;
-    private int TimeStepsPerFrame = 3;
     public Car carPrefab;
     public Transform carParent;
 
-    public List<Node> way = new List<Node>();
+    private List<CarGenerator> generators = new List<CarGenerator>();
+    private List<TrafficLight> lights = new List<TrafficLight>();
 
-    public long currentTimeStep = 0;
+    public List<Node> nodes = new List<Node>();
+    private HashSet<Car> cars = new HashSet<Car>();
+    public Dictionary<int, Edge> edgesMap = new Dictionary<int, Edge>();
+    public Dictionary<int, Car> carsMap = new Dictionary<int, Car>();
+
+    public List<Node> way = new List<Node>();
 
     private SimulationProcessor()
     {
@@ -36,11 +40,13 @@ public class SimulationProcessor : MonoBehaviour
     public void OnCarCreate(Car car)
     {
         cars.Add(car);
+        carsMap.Add(car.id, car);
     }
 
     public void OnCarDestroy(Car car)
     {
         cars.Remove(car);
+        carsMap.Remove(car.id);
     }
 
     private void DrawLine(Vector3 position1, Vector3 position2, float alpha = 1.0f, bool curLayer = true)
@@ -61,18 +67,23 @@ public class SimulationProcessor : MonoBehaviour
         foreach (var start in nodes)
         {
             start.init();
+
             foreach (var finish in start.connectedNodes)
                 DrawLine(start.transform.position, finish.transform.position);
+
             if (start is TrafficLight)
                 lights.Add(start as TrafficLight);
             else if (start is CarGenerator)
                 generators.Add(start as CarGenerator);
         }
+
+        foreach (var j in generators)
+            j.TryGenerate();
     }
 
     private void Update()
     {
-        for (int i = 0; i < TimeStepsPerFrame; i++)
+        for (int i = 0; i < timeStepsPerFrame; i++)
         {
             CalculateStep();
         }
@@ -81,12 +92,79 @@ public class SimulationProcessor : MonoBehaviour
     private void CalculateStep()
     {
         currentTimeStep++;
-        foreach (var j in generators)
-            j.TryGenerate();
-        foreach (var j in lights)
-            j.TrySwitch();
+        //foreach (var j in generators)
+        //    j.TryGenerate();
+        //foreach (var j in lights)
+        //    j.TrySwitch();
         foreach (var j in cars)
-            j.DoStep();
+            DoStep(j);
+    }
+
+
+    private void DoStep(Car car)
+    {
+
+        // Acceleration
+        if (car.velocity < Constants.SPEED_LIMIT)
+            car.velocity += 1;
+
+        // Braking
+        int brakingLength = IntPow(car.velocity, 2);
+        int stepsLeft = car.velocity + brakingLength;
+
+        var obsEgde = edgesMap[car.GetCurrentEdgeId()];
+        int curEdgeNum = car.curEdgeNumInPath;
+        int curCellNum = car.cellNum;
+
+        bool hasObstacle = false;
+
+        while (stepsLeft > 0)
+        {
+            stepsLeft--;
+            curCellNum++;
+
+            if (curCellNum == obsEgde.cells.Count)
+            {
+                curEdgeNum++;
+                curCellNum = 1; // 1 ибо 0 = светофор, который только что проехали
+
+                // Достигли конца пути и не нашли препятствий
+                if (curEdgeNum == car.path.Count)
+                    break;
+
+                obsEgde = edgesMap[car.GetEdgeIdByPathNum(curEdgeNum)];
+            }
+
+            if (obsEgde.HasObstacle(curCellNum))
+            {
+                hasObstacle = true;
+                break;
+            }
+
+        }
+
+        if (hasObstacle)
+            car.velocity -= stepsLeft + 1;
+
+        // Move
+        // Чистим за собой клетку
+        edgesMap[car.GetCurrentEdgeId()].cells[car.cellNum] = Constants.NO_CAR;
+        int cellsToMove = car.velocity;
+        while (cellsToMove > 0)
+        {
+            cellsToMove--;
+            car.cellNum++;
+            if (car.cellNum == car.path.Count)
+            {
+                car.cellNum = 1;
+                car.curEdgeNumInPath++;
+                if (car.curEdgeNumInPath == car.path.Count)
+                {
+                    Destroy(car);
+                }
+            }
+        }
+
     }
 
     public List<Node> GetCarPath(Node start)
@@ -142,4 +220,16 @@ public class SimulationProcessor : MonoBehaviour
     //    } */
     //}   
 
+    int IntPow(int x, uint pow)
+    {
+        int ret = 1;
+        while (pow != 0)
+        {
+            if ((pow & 1) == 1)
+                ret *= x;
+            x *= x;
+            pow >>= 1;
+        }
+        return ret;
+    }
 }

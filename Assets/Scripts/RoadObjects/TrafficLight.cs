@@ -2,12 +2,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TrafficLight : Node {
+public class TrafficLight : Node
+{
     List<Edge> positiveEdges;
     List<Edge> negativeEdges;
+
     public int stepsBetweenTurns;
-    private bool state = false;
     private long lastSwitchTime = 0;
+
+    private bool open = false;
 
     public void TrySwitch()
     {
@@ -17,9 +20,14 @@ public class TrafficLight : Node {
             lastSwitchTime = SimulationProcessor.Instance.currentTimeStep;
         }
     }
+
     private void Switch()
     {
-        state = !state;
+        open = !open;
     }
 
+    public bool isOpen()
+    {
+        return open;
+    }
 }
