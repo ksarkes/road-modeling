@@ -7,20 +7,11 @@ using UnityEngine;
 [CanEditMultipleObjects]
 public class Node : MonoBehaviour
 {
-
-    public static int MaxID = 1;
-
     public int id;
-
-    public Node()
-    {
-        MaxID++;
-        id = MaxID;
-    }
 
     public void Awake()
     {
-        SimulationProcessor.Instance.RegisterNode(this);
+        //SimulationProcessor.Instance.RegisterNode(this);
     }
 
     public virtual void init()

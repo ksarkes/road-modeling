@@ -8,18 +8,8 @@ using UnityEngine.UI;
 public class SimulationProcessor : MonoBehaviour
 {
     public static SimulationProcessor Instance;
-
-    private int maxCarId = 0;
-    private int timeStepsPerFrame = 1;
     public long currentTimeStep = 0;
 
-    public GameObject linePrefab;
-    public Transform linesParent;
-    public Car carPrefab;
-    public Transform carParent;
-
-    private List<CarGenerator> generators = new List<CarGenerator>();
-    private List<TrafficLight> lights = new List<TrafficLight>();
 
     public List<Node> nodes = new List<Node>();
     public List<Edge> edges = new List<Edge>();
@@ -28,7 +18,30 @@ public class SimulationProcessor : MonoBehaviour
     public Dictionary<int, Car> carsMap = new Dictionary<int, Car>();
 
     public List<Node> way = new List<Node>();
+
+    [Header("Parents")]
+    public Transform linesParent;
+    public Transform carParent;
+
+    [Header("PREFABS")]
+    [SerializeField]
+    private TrafficLight trafficLightPrefab;
+    [SerializeField]
+    private CarGenerator generatorPrefab;
+    public Car carPrefab;
+    public GameObject linePrefab;
+
     private List<Edge> edgeway;
+    private List<CarGenerator> generators = new List<CarGenerator>();
+    private List<TrafficLight> lights = new List<TrafficLight>();
+
+    private int maxCarId = 0;
+    private int timeStepsPerFrame = 1;
+
+    private int[,] posMatrix;
+    private int[,] adjMatrix;
+
+    private Dictionary<int, TrafficLight> lightsMap = new Dictionary<int, TrafficLight>();
 
     private SimulationProcessor()
     {
@@ -67,54 +80,106 @@ public class SimulationProcessor : MonoBehaviour
             newLine.transform.parent = linesParent;
     }
 
-    void Start()
+    private void GenerateGraph()
     {
-        int edgedId = 0;
-        foreach (var start in nodes)
+        int N = 15;
+        int M = 15;
+        var generator = new GraphGenerator(N, M);
+        generator.GenerateGraph(out posMatrix, out adjMatrix);
+        for (int i = 0; i < N; i++)
+            for (int j = 0; j < M; j++)
+                if (posMatrix[i, j] > 0)
+                    CreateTrafficLight(j, i, posMatrix[i,j]);
+    }
+
+    private TrafficLight CreateTrafficLight(int x, int y, int id)
+    {
+        TrafficLight newLight;
+        newLight = Instantiate(trafficLightPrefab);
+        //trafficLightPrefab.transform.position = new Vector3(x - posMatrix.GetLength(1) / 2, y - posMatrix.GetLength(0) / 2);
+        newLight.transform.position = new Vector3(x,y);
+        newLight.id = id;
+        lightsMap.Add(newLight.id, newLight);
+        return newLight;
+    }
+
+    private void ConnectNodes()
+    {
+        foreach (var i in lightsMap.Values)
         {
-            start.init();
-            foreach (var finish in start.connectedNodes)
+            for (int j = 1; j < adjMatrix.GetLength(0); j++)
             {
-                DrawLine(start.transform.position, finish.transform.position);
-                if (start is TrafficLight && finish is TrafficLight)
+                
+                if (adjMatrix[i.id, j] > 0)
                 {
-                    edgedId++;
-                    Edge edge = new Edge((TrafficLight)start, (TrafficLight)finish);
-                    edge.id = edgedId;
-                    edgesMap.Add(edgedId, edge);
-                    edges.Add(edge);
+                    i.connectedNodes.Add(lightsMap[j]);
                 }
             }
-
-            if (start is TrafficLight)
-                lights.Add(start as TrafficLight);
-            else if (start is CarGenerator)
-                generators.Add(start as CarGenerator);
         }
+    }
 
-        edgeway = new List<Edge>();
-        for (int i = 0; i < way.Count - 1; i++)
+    private void DrawLines()
+    {
+        foreach (var i in lightsMap.Values)
         {
-            foreach (var k in edgesMap.Values)
+            foreach (var j in i.connectedNodes)
             {
-                if (k.start == way[i] && k.finish == way[i + 1])
-                    edgeway.Add(k);
+                DrawLine(i.transform.position, j.transform.position);
             }
         }
-
-        foreach (var j in generators)
-            j.TryGenerate();
     }
 
-    private void Update()
+    void Start()
     {
-        for (int i = 0; i < timeStepsPerFrame; i++)
-        {
-            CalculateStep();
-            foreach (var j in lights)
-                j.TrySwitch();
-        }
+        GenerateGraph();
+        ConnectNodes();
+        DrawLines();
+        //int edgedId = 0;
+        //foreach (var start in nodes)
+        //{
+        //    start.init();
+        //    foreach (var finish in start.connectedNodes)
+        //    {
+        //        DrawLine(start.transform.position, finish.transform.position);
+        //        if (start is TrafficLight && finish is TrafficLight)
+        //        {
+        //            edgedId++;
+        //            Edge edge = new Edge((TrafficLight)start, (TrafficLight)finish);
+        //            edge.id = edgedId;
+        //            edgesMap.Add(edgedId, edge);
+        //            edges.Add(edge);
+        //        }
+        //    }
+
+        //    if (start is TrafficLight)
+        //        lights.Add(start as TrafficLight);
+        //    else if (start is CarGenerator)
+        //        generators.Add(start as CarGenerator);
+        //}
+
+        //edgeway = new List<Edge>();
+        //for (int i = 0; i < way.Count - 1; i++)
+        //{
+        //    foreach (var k in edgesMap.Values)
+        //    {
+        //        if (k.start == way[i] && k.finish == way[i + 1])
+        //            edgeway.Add(k);
+        //    }
+        //}
+
+        //foreach (var j in generators)
+        //    j.TryGenerate();
     }
+
+    //private void Update()
+    //{
+    //    for (int i = 0; i < timeStepsPerFrame; i++)
+    //    {
+    //        CalculateStep();
+    //        foreach (var j in lights)
+    //            j.TrySwitch();
+    //    }
+    //}
 
     private void CalculateStep()
     {
@@ -215,10 +280,6 @@ public class SimulationProcessor : MonoBehaviour
         //Node finish = generators[0];
         //if (start == finish)
         //    finish = generators[1];
-        edgeway = new List<Edge>();
-        edgeway.Add(edges[0]);
-        edgeway.Add(edges[1]);
-        edgeway.Add(edges[2]);
         return edgeway;
         //if (UnityEngine.Random.Range(0, 1.0f) > 0.5f)
         //    return edgeway;
