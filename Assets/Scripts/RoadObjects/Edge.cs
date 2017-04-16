@@ -10,10 +10,20 @@ public class Edge {
     public TrafficLight finish;
 
     // элемент cells айдишник кара 
-    public List<int> cells;	
+    public List<int> cells = new List<int>();
 
     public Edge()
     {
+        for (int i = 0; i < Constants.DIV_CELLS_NUM; i++)
+        {
+            cells.Add(Constants.NO_CAR);
+        }
+    }
+
+    public Edge(TrafficLight start, TrafficLight finish)
+    {
+        this.start = start;
+        this.finish = finish;
         for (int i = 0; i < Constants.DIV_CELLS_NUM; i++)
         {
             cells.Add(Constants.NO_CAR);

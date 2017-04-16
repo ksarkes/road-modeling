@@ -9,8 +9,8 @@ public class Car : MonoBehaviour
 
     public List<Edge> path;
     
-    public int curEdgeNumInPath;
-    public int cellNum;
+    public int curEdgeNumInPath = 0;
+    public int cellNum = 0;
 
     // cell/s
     public int velocity = 0;
@@ -18,6 +18,7 @@ public class Car : MonoBehaviour
     private void Start()
     {
         SimulationProcessor.Instance.OnCarCreate(this);
+        path = SimulationProcessor.Instance.GetCarPath(null);
     }
 
     private void OnDestroy()
@@ -32,6 +33,9 @@ public class Car : MonoBehaviour
 
     public int GetEdgeIdByPathNum(int num)
     {
+
         return path[num].id;
     }
+
+    
 }
