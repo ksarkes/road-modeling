@@ -9,7 +9,9 @@ public class SimulationProcessor : MonoBehaviour
 {
     public static SimulationProcessor Instance;
     public long currentTimeStep = 0;
-
+    public int N = 15;
+    public int M = 15;
+    public int carsNum = 50;
 
     public List<Node> nodes = new List<Node>();
     public List<Edge> edges = new List<Edge>();
@@ -84,8 +86,6 @@ public class SimulationProcessor : MonoBehaviour
 
     private void GenerateGraph()
     {
-        int N = 15;
-        int M = 15;
         var generator = new GraphGenerator(N, M);
         generator.GenerateGraph(out posMatrix, out adjMatrix);
         for (int i = 0; i < N; i++)
@@ -149,7 +149,7 @@ public class SimulationProcessor : MonoBehaviour
         GraphGenerator.PrintMatrix(adjMatrix);
         DrawLines();
 
-        for (int i = 0; i < 50; i++)
+        for (int i = 0; i < carsNum; i++)
         {
             var start = GetRandomNode();
             // TODO: синхронизовать GetRandomNode и GetRandomEdge
