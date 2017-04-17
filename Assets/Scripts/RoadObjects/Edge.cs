@@ -8,20 +8,14 @@ public class Edge {
 
     public int id;
 
+    public int cellsNum;
+
     public TrafficLight start;
     public TrafficLight finish;
 
     // элемент cells айдишник кара 
     public List<int> cells = new List<int>();
-
-    public Edge()
-    {
-        for (int i = 0; i < Constants.DIV_CELLS_NUM; i++)
-        {
-            cells.Add(Constants.NO_CAR);
-        }
-    }
-
+    
     public Edge(TrafficLight start, TrafficLight finish)
     {
         this.start = start;
@@ -30,11 +24,13 @@ public class Edge {
         id = maxId;
         maxId++;
 
-        for (int i = 0; i < Constants.DIV_CELLS_NUM; i++)
-        {
-            cells.Add(Constants.NO_CAR);
-        }
+        double len = Vector3.Magnitude(new Vector3(start.transform.position.x - finish.transform.position.x,
+            start.transform.position.y - finish.transform.position.y));
 
+        cellsNum = (int) (Constants.METERS_PER_EDGE * len);
+
+        for (int i = 0; i < cellsNum; i++)
+            cells.Add(Constants.NO_CAR);
     }
 
     public bool HasObstacle(int cellNum)

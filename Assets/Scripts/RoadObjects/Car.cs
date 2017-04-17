@@ -8,6 +8,7 @@ public class Car : MonoBehaviour
     public int id;
 
     public List<Edge> path;
+    public Node start;
     
     public int curEdgeNumInPath = 0;
     public int cellNum = 0;
@@ -17,8 +18,8 @@ public class Car : MonoBehaviour
 
     private void Start()
     {
+        path = SimulationProcessor.Instance.GetCarPath(start);
         SimulationProcessor.Instance.OnCarCreate(this);
-        path = SimulationProcessor.Instance.GetCarPath(null);
     }
 
     private void OnDestroy()
@@ -36,6 +37,5 @@ public class Car : MonoBehaviour
 
         return path[num].id;
     }
-
     
 }

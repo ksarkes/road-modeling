@@ -16,12 +16,14 @@ public class SimulationProcessor : MonoBehaviour
     private HashSet<Car> cars = new HashSet<Car>();
     public Dictionary<int, Edge> edgesMap = new Dictionary<int, Edge>();
     public Dictionary<int, Car> carsMap = new Dictionary<int, Car>();
+    private Dictionary<int, List<Edge>> nodeIncEdges = new Dictionary<int, List<Edge>>();
 
     public List<Node> way = new List<Node>();
 
     [Header("Parents")]
     public Transform linesParent;
     public Transform carParent;
+    public Transform lightsParent;
 
     [Header("PREFABS")]
     [SerializeField]
@@ -41,7 +43,7 @@ public class SimulationProcessor : MonoBehaviour
     private int[,] posMatrix;
     private int[,] adjMatrix;
 
-    private Dictionary<int, TrafficLight> lightsMap = new Dictionary<int, TrafficLight>();
+    public Dictionary<int, TrafficLight> lightsMap = new Dictionary<int, TrafficLight>();
 
     private SimulationProcessor()
     {
@@ -52,12 +54,12 @@ public class SimulationProcessor : MonoBehaviour
     {
         nodes.Add(node);
     }
-
+    
     public void OnCarCreate(Car car)
-    {
-        cars.Add(car);
+    {   
         maxCarId++;
         car.id = maxCarId;
+        cars.Add(car);
         carsMap.Add(car.id, car);
     }
 
@@ -82,8 +84,8 @@ public class SimulationProcessor : MonoBehaviour
 
     private void GenerateGraph()
     {
-        int N = 5;
-        int M = 5;
+        int N = 15;
+        int M = 15;
         var generator = new GraphGenerator(N, M);
         generator.GenerateGraph(out posMatrix, out adjMatrix);
         for (int i = 0; i < N; i++)
@@ -98,6 +100,7 @@ public class SimulationProcessor : MonoBehaviour
         newLight = Instantiate(trafficLightPrefab);
         //trafficLightPrefab.transform.position = new Vector3(x - posMatrix.GetLength(1) / 2, y - posMatrix.GetLength(0) / 2);
         newLight.transform.position = new Vector3(x, -y);
+        newLight.transform.parent = lightsParent;
         newLight.id = id;
         lightsMap.Add(newLight.id, newLight);
         return newLight;
@@ -107,7 +110,7 @@ public class SimulationProcessor : MonoBehaviour
     {
         foreach (var i in lightsMap.Values)
         {
-            for (int j = 1; j < adjMatrix.GetLength(0); j++)
+            for (int j = 1; j < adjMatrix.GetLength(1); j++)
             {
                 
                 if (adjMatrix[i.id, j] > 0)
@@ -115,6 +118,11 @@ public class SimulationProcessor : MonoBehaviour
                     i.connectedNodes.Add(lightsMap[j]);
                     var edge = new Edge(i, lightsMap[j]);
                     edgesMap.Add(edge.id, edge);
+
+                    if (!nodeIncEdges.ContainsKey(i.id))
+                        nodeIncEdges.Add(i.id, new List<Edge>());
+                    nodeIncEdges[i.id].Add(edge);
+
                     //edge = new Edge(lightsMap[j], i);
                     //edgesMap.Add(edge.id, edge);
                 }
@@ -140,52 +148,39 @@ public class SimulationProcessor : MonoBehaviour
 
         GraphGenerator.PrintMatrix(adjMatrix);
         DrawLines();
-        //int edgedId = 0;
-        //foreach (var start in nodes)
-        //{
-        //    start.init();
-        //    foreach (var finish in start.connectedNodes)
-        //    {
-        //        DrawLine(start.transform.position, finish.transform.position);
-        //        if (start is TrafficLight && finish is TrafficLight)
-        //        {
-        //            edgedId++;
-        //            Edge edge = new Edge((TrafficLight)start, (TrafficLight)finish);
-        //            edge.id = edgedId;
-        //            edgesMap.Add(edgedId, edge);
-        //            edges.Add(edge);
-        //        }
-        //    }
 
-        //    if (start is TrafficLight)
-        //        lights.Add(start as TrafficLight);
-        //    else if (start is CarGenerator)
-        //        generators.Add(start as CarGenerator);
-        //}
+        for (int i = 0; i < 50; i++)
+        {
+            var start = GetRandomNode();
+            // TODO: синхронизовать GetRandomNode и GetRandomEdge
+            System.Threading.Thread.Sleep(10);
+            var newCar = (Car) Instantiate(carPrefab);
 
-        //edgeway = new List<Edge>();
-        //for (int i = 0; i < way.Count - 1; i++)
-        //{
-        //    foreach (var k in edgesMap.Values)
-        //    {
-        //        if (k.start == way[i] && k.finish == way[i + 1])
-        //            edgeway.Add(k);
-        //    }
-        //}
-
-        //foreach (var j in generators)
-        //    j.TryGenerate();
+            newCar.transform.parent = carParent;
+            newCar.start = start;
+            newCar.transform.position = start.transform.position;
+        }
     }
 
-    //private void Update()
-    //{
-    //    for (int i = 0; i < timeStepsPerFrame; i++)
-    //    {
-    //        CalculateStep();
-    //        foreach (var j in lights)
-    //            j.TrySwitch();
-    //    }
-    //}
+    private long LastGenerationTime = 0;
+
+    private void Update()
+    {
+        //if (currentTimeStep - LastGenerationTime == 5)
+        //{
+        //    var newCar = Instantiate(carPrefab);
+        //    newCar.transform.parent = carParent;
+        //    newCar.transform.position = transform.position;
+
+        //    cars.Add(newCar);
+        //}
+        for (int i = 0; i < timeStepsPerFrame; i++)
+        {
+            CalculateStep();
+            foreach (var j in lightsMap.Values)
+                j.TrySwitch();
+        }
+    }
 
     private void CalculateStep()
     {
@@ -197,15 +192,20 @@ public class SimulationProcessor : MonoBehaviour
         foreach (var j in cars)
             DoStep(j);
     }
-
+    
     private void DoStep(Car car)
     {
+
 
         // Acceleration
         if (car.velocity < Constants.SPEED_LIMIT)
             car.velocity += 1;
         else
             car.velocity = Constants.SPEED_LIMIT;
+
+        //System.Random rand = new System.Random();
+        //int r = Constants.SPEED_LIMIT / 3 / rand.Next(1, Constants.SPEED_LIMIT + 1);
+        //car.velocity += r;
 
         // Braking
         //int brakingLength = IntPow(car.velocity, 2);
@@ -253,7 +253,7 @@ public class SimulationProcessor : MonoBehaviour
         {
             cellsToMove--;
             car.cellNum++;
-            if (car.cellNum >= Constants.DIV_CELLS_NUM)
+            if (car.cellNum >= car.path[car.curEdgeNumInPath].cellsNum)
             {
                 car.cellNum = 1;
                 car.curEdgeNumInPath++;
@@ -264,12 +264,13 @@ public class SimulationProcessor : MonoBehaviour
                 }
             }
         }
+         
+        var curEdgeId = car.GetCurrentEdgeId();
+        edgesMap[curEdgeId].cells[car.cellNum] = Constants.CAR_OBSTACLE;
 
-        curEdgeNum = car.GetCurrentEdgeId();
-
-        var newpos = Vector3.Lerp(edgesMap[curEdgeNum].start.transform.position,
-            edgesMap[curEdgeNum].finish.transform.position,
-             (float)car.cellNum / (float)edgesMap[curEdgeNum].cells.Count);
+        var newpos = Vector3.Lerp(edgesMap[curEdgeId].start.transform.position,
+            edgesMap[curEdgeId].finish.transform.position,
+             (float)car.cellNum / (float)edgesMap[curEdgeId].cells.Count);
 
         //if (edgesMap[curEdgeNum].finish.transform.position.y > edgesMap[curEdgeNum].start.transform.position.y)
         //    newpos.x += 0.5f;
@@ -277,67 +278,53 @@ public class SimulationProcessor : MonoBehaviour
         //    newpos.x -= 0.5f;
         car.transform.position = newpos;
         var angle = Vector3.Angle(new Vector3(0, 1) - new Vector3(0, 0),
-            edgesMap[curEdgeNum].finish.transform.position - edgesMap[curEdgeNum].start.transform.position);
+            edgesMap[curEdgeId].finish.transform.position - edgesMap[curEdgeId].start.transform.position);
         car.transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle - 90.0f));
     }
 
     public List<Edge> GetCarPath(Node start)
     {
-        //Node finish = generators[0];
-        //if (start == finish)
-        //    finish = generators[1];
-        return edgeway;
-        //if (UnityEngine.Random.Range(0, 1.0f) > 0.5f)
-        //    return edgeway;
-        //else
-        //{
-        //    var rev = new List<Edge>(edgeway);
-        //    rev.Reverse();
-        //    return rev;
-        //}
+        List<Edge> path = new List<Edge>();
+        Dictionary<int, bool> visited = new Dictionary<int, bool>();
+        Node cur = start;
+        visited.Add(start.id, true);
+    
+        while (true)
+        {
+            List<Edge> inceds = new List<Edge>();
+
+            foreach (var edge in nodeIncEdges[cur.id])
+            {
+                if (!visited.ContainsKey(edge.finish.id) || !visited[edge.finish.id])
+                    inceds.Add(edge);
+            }
+
+            if (inceds.Count == 0)
+                break;
+
+            Edge newEdge = GetRandomEdge(inceds);
+            visited.Add(newEdge.finish.id, true);
+            path.Add(newEdge);
+            cur = newEdge.finish;
+        }
+
+        return path;
     }
-    //public List<Node> DFS(Node start, Node target)
-    //{
 
+    public Node GetRandomNode()
+    {
+        List<int> keyList = new List<int>(lightsMap.Keys);
+        System.Random rand = new System.Random();
+        int randomKey = keyList[rand.Next(keyList.Count)];
+        return lightsMap[randomKey];
+    }
 
-    //    /*
-    //    Stack<Node> path = new Stack<Node>();
-    //    Stack<Node> observedNodes = new Stack<Node>();
-    //    observedNodes.Push(start);
-
-    //    // List<Node> result = new List<Node>();
-
-    //    while (observedNodes.Any())
-    //    {
-    //        var node = observedNodes.Pop();
-
-    //        if (node == target)
-    //            return path;
-
-    //        foreach (var child in node.connectedNodes)
-    //        {
-    //            if (!observedNodes.Contains(child))
-    //                observedNodes.Push(child);
-
-    //        }
-    //    }
-
-    //    Stack<Node<K, V>> stack = new Stack<Node<K, V>>();
-
-    //    while (stack.Any())
-    //    {
-    //        var node = stack.Pop();
-
-    //        if (node.key == key)
-    //        {
-    //            return node.value;
-    //        }
-    //        foreach (var child in node.children)
-    //        {
-    //            stack.Push(child);
-    //        }
-    //    } */
-    //}   
+    private Edge GetRandomEdge(List<Edge> dic)
+    { 
+        System.Random rand = new System.Random();
+        int randomKey = rand.Next(dic.Count);
+        return dic[randomKey];
+    }
 
     int IntPow(int x, uint pow)
     {

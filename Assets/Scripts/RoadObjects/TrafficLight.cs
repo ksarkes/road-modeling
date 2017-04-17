@@ -7,7 +7,7 @@ public class TrafficLight : Node
     List<Edge> positiveEdges;
     List<Edge> negativeEdges;
 
-    private int stepsBetweenTurns = 200;
+    private int stepsBetweenTurns = 100;
     private long lastSwitchTime = 0;
 
     private bool open = false;
