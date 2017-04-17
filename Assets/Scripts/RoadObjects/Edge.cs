@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class Edge {
 
+    public static int maxId = 1;
+
     public int id;
 
     public TrafficLight start;
@@ -24,10 +26,15 @@ public class Edge {
     {
         this.start = start;
         this.finish = finish;
+
+        id = maxId;
+        maxId++;
+
         for (int i = 0; i < Constants.DIV_CELLS_NUM; i++)
         {
             cells.Add(Constants.NO_CAR);
         }
+
     }
 
     public bool HasObstacle(int cellNum)

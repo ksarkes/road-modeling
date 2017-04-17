@@ -8,6 +8,7 @@ public class GraphGenerator
     private int M = 10;
     private int[,] init;
     private int[,] adjMatrix;
+    private int[,] backup;
 
     private float generationMedian = 0.05f;
 
@@ -27,18 +28,22 @@ public class GraphGenerator
 
     private void GenerateRandomInitMatrix()
     {
-        init = new int[M, N];
+        init = new int[N, M];
+        backup = new int[N, M];
         System.Random rand = new System.Random();
         for (int i = 0; i < N; i++)
             for (int j = 0; j < M; j++)
             {
                 var rnd = UnityEngine.Random.Range(0.0f, 1.0f);
                 init[i, j] = rnd < generationMedian ? 1 : 0;
+                //if (i == j && i == 2 || i == 0 && j == 0)
+                //    init[i, j] = 1;
+                //else
+                //    init[i, j] = 0;
             }
 
         PrintMatrix(init);
 
-        int[,] backup = new int[N, M];
         for (int i = 0; i < N; i++)
             for (int j = 0; j < M; j++)
                 backup[i, j] = init[i, j];
@@ -47,7 +52,7 @@ public class GraphGenerator
         for (int i = 0; i < N; i++)
             for (int j = 0; j < M; j++)
             {
-                if (init[i, j] == 1)
+                if (backup[i, j] == 1)
                     TryCreateEdges(i, j, backup);
             }
         Debug.Log(init.ToString());
@@ -74,13 +79,17 @@ public class GraphGenerator
                 init[i, b] = 1;
                 break;
             }
+
             if (i == N - 1)
+            {
                 init[i, b] = 1;
+                break;
+            }
 
             if (backup[i, b] == 0)
             {
                 init[i, b] = -1;
-                backup[i, b] = -1;
+                //backup[i, b] = -1;
             }
 
         }
@@ -92,8 +101,12 @@ public class GraphGenerator
                 init[i, b] = 1;
                 break;
             }
+
             if (i == 0)
+            {
                 init[i, b] = 1;
+                break;
+            }
 
             if (backup[i, b] == 0)
             {
@@ -103,40 +116,46 @@ public class GraphGenerator
 
         }
 
-        for (int i = b + 1; i < M; i++)
+        for (int j = b + 1; j < M; j++)
         {
-            if (backup[a, i] == -1)
+            if (backup[a, j] == -1)
             {
-                init[a, i] = 1;
+                init[a, j] = 1;
                 break;
             }
-            if (i == M - 1)
-                init[a, i] = 1;
 
-            if (backup[a, i] == 0)
+            if (j == M - 1)
             {
-                backup[a, i] = -1;
-                init[a, i] = -1;
+                init[a, j] = 1;
                 break;
+            }
+
+            if (backup[a, j] == 0)
+            {
+                backup[a, j] = -1;
+                init[a, j] = -1;
             }
 
         }
 
-        for (int i = b - 1; i >= 0; i--)
+        for (int j = b - 1; j >= 0; j--)
         {
-            if (backup[a, i] == -1)
+            if (backup[a, j] == -1)
             {
-                init[a, i] = 1;
+                init[a, j] = 1;
                 break;
             }
-            if (i == 0)
-                init[a, i] = 1;
 
-            if (backup[a, i] == 0)
-            {
-                backup[a, i] = -1;
-                init[a, i] = -1;
+            if (j == 0)
+            { 
+                init[a, j] = 1;
                 break;
+            }
+
+            if (backup[a, j] == 0)
+            {
+                backup[a, j] = -1;
+                init[a, j] = -1;
             }
         }
     }
@@ -174,7 +193,7 @@ public class GraphGenerator
             {
                 var x = init[i, b];
                 var y = init[a, b];
-                adjMatrix[y, x] = System.Math.Abs(i - a);
+                adjMatrix[y, x] = 1;
                 break;
             }
         }
@@ -185,7 +204,7 @@ public class GraphGenerator
             {
                 var x = init[i, b];
                 var y = init[a, b];
-                adjMatrix[y, x] = System.Math.Abs(i - a);
+                adjMatrix[y, x] = 1;
                 break;
             }
         }
@@ -198,7 +217,7 @@ public class GraphGenerator
                 var y = init[a, b];
                 try
                 {
-                    adjMatrix[y, x] = System.Math.Abs(i - b);
+                    adjMatrix[y, x] = 1;
                     break;
                 }
                 catch (Exception e)
@@ -217,18 +236,18 @@ public class GraphGenerator
             {
                 var x = init[a, i];
                 var y = init[a, b];
-                adjMatrix[y, x] = System.Math.Abs(i - b);
+                adjMatrix[y, x] = 1;
                 break;
             }
         }
     }
 
-    private void PrintMatrix(int[,] matrix)
+    public static void PrintMatrix(int[,] matrix)
     {
         string obj = "";
-        for (int i = 0; i < N; i++)
+        for (int i = 0; i < matrix.GetLength(0); i++)
         {
-            for (int j = 0; j < M; j++)
+            for (int j = 0; j < matrix.GetLength(1); j++)
                 obj += " " + matrix[i, j].ToString();
             obj += '\n';
         }

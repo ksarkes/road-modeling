@@ -82,8 +82,8 @@ public class SimulationProcessor : MonoBehaviour
 
     private void GenerateGraph()
     {
-        int N = 15;
-        int M = 15;
+        int N = 5;
+        int M = 5;
         var generator = new GraphGenerator(N, M);
         generator.GenerateGraph(out posMatrix, out adjMatrix);
         for (int i = 0; i < N; i++)
@@ -97,7 +97,7 @@ public class SimulationProcessor : MonoBehaviour
         TrafficLight newLight;
         newLight = Instantiate(trafficLightPrefab);
         //trafficLightPrefab.transform.position = new Vector3(x - posMatrix.GetLength(1) / 2, y - posMatrix.GetLength(0) / 2);
-        newLight.transform.position = new Vector3(x,y);
+        newLight.transform.position = new Vector3(x, -y);
         newLight.id = id;
         lightsMap.Add(newLight.id, newLight);
         return newLight;
@@ -113,6 +113,10 @@ public class SimulationProcessor : MonoBehaviour
                 if (adjMatrix[i.id, j] > 0)
                 {
                     i.connectedNodes.Add(lightsMap[j]);
+                    var edge = new Edge(i, lightsMap[j]);
+                    edgesMap.Add(edge.id, edge);
+                    //edge = new Edge(lightsMap[j], i);
+                    //edgesMap.Add(edge.id, edge);
                 }
             }
         }
@@ -133,6 +137,8 @@ public class SimulationProcessor : MonoBehaviour
     {
         GenerateGraph();
         ConnectNodes();
+
+        GraphGenerator.PrintMatrix(adjMatrix);
         DrawLines();
         //int edgedId = 0;
         //foreach (var start in nodes)
