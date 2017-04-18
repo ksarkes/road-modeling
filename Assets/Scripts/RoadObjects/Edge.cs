@@ -24,8 +24,8 @@ public class Edge {
         id = maxId;
         maxId++;
 
-        double len = Vector3.Magnitude(new Vector3(start.transform.position.x - finish.transform.position.x,
-            start.transform.position.y - finish.transform.position.y));
+        double len = (Vector3.Magnitude(new Vector3(start.transform.position.x - finish.transform.position.x,
+            start.transform.position.y - finish.transform.position.y)))/ Constants.DST_MULT;
 
         cellsNum = (int) (Constants.METERS_PER_EDGE * len);
 

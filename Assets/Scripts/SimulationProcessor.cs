@@ -40,7 +40,7 @@ public class SimulationProcessor : MonoBehaviour
     private List<TrafficLight> lights = new List<TrafficLight>();
 
     private int maxCarId = 0;
-    private int timeStepsPerFrame = 200;
+    private int timeStepsPerFrame = 3;
 
     private int[,] posMatrix;
     private int[,] adjMatrix;
@@ -56,9 +56,9 @@ public class SimulationProcessor : MonoBehaviour
     {
         nodes.Add(node);
     }
-    
+
     public void OnCarCreate(Car car)
-    {   
+    {
         maxCarId++;
         car.id = maxCarId;
         cars.Add(car);
@@ -91,7 +91,7 @@ public class SimulationProcessor : MonoBehaviour
         for (int i = 0; i < N; i++)
             for (int j = 0; j < M; j++)
                 if (posMatrix[i, j] > 0)
-                    CreateTrafficLight(j, i, posMatrix[i,j]);
+                    CreateTrafficLight(j, i, posMatrix[i, j]);
     }
 
     private TrafficLight CreateTrafficLight(int x, int y, int id)
@@ -99,7 +99,7 @@ public class SimulationProcessor : MonoBehaviour
         TrafficLight newLight;
         newLight = Instantiate(trafficLightPrefab);
         //trafficLightPrefab.transform.position = new Vector3(x - posMatrix.GetLength(1) / 2, y - posMatrix.GetLength(0) / 2);
-        newLight.transform.position = new Vector3(x, -y);
+        newLight.transform.position = new Vector3(x * Constants.DST_MULT, -y * Constants.DST_MULT);
         newLight.transform.parent = lightsParent;
         newLight.id = id;
         lightsMap.Add(newLight.id, newLight);
@@ -112,7 +112,7 @@ public class SimulationProcessor : MonoBehaviour
         {
             for (int j = 1; j < adjMatrix.GetLength(1); j++)
             {
-                
+
                 if (adjMatrix[i.id, j] > 0)
                 {
                     i.connectedNodes.Add(lightsMap[j]);
@@ -154,7 +154,7 @@ public class SimulationProcessor : MonoBehaviour
             var start = GetRandomNode();
             // TODO: синхронизовать GetRandomNode и GetRandomEdge
             System.Threading.Thread.Sleep(10);
-            var newCar = (Car) Instantiate(carPrefab);
+            var newCar = (Car)Instantiate(carPrefab);
 
             newCar.transform.parent = carParent;
             newCar.start = start;
@@ -192,7 +192,7 @@ public class SimulationProcessor : MonoBehaviour
         foreach (var j in cars)
             DoStep(j);
     }
-    
+
     private void DoStep(Car car)
     {
 
@@ -211,11 +211,11 @@ public class SimulationProcessor : MonoBehaviour
 
         // Braking
         //int brakingLength = IntPow(car.velocity, 2);
-        int stepsLeft = car.velocity;//+ brakingLength;
+        int stepsLeft = car.velocity * 3;//+ brakingLength;
 
         var obsEgde = edgesMap[car.GetCurrentEdgeId()];
         int curEdgeNum = car.curEdgeNumInPath;
-        int curCellNum = car.cellNum;
+        int curCellNum = car.cellNum + Constants.HALF_CAR_SIZE;
 
         bool hasObstacle = false;
 
@@ -224,7 +224,7 @@ public class SimulationProcessor : MonoBehaviour
             stepsLeft--;
             curCellNum++;
 
-            if (curCellNum == obsEgde.cells.Count)
+            if (curCellNum >= obsEgde.cells.Count)
             {
                 curEdgeNum++;
                 curCellNum = 1; // 1 ибо 0 = светофор, который только что проехали
@@ -245,11 +245,18 @@ public class SimulationProcessor : MonoBehaviour
         }
 
         if (hasObstacle)
-            car.velocity -= stepsLeft + 1;
+            car.velocity -= ((stepsLeft)/3);
 
         // Move
         // Чистим за собой клетку
         edgesMap[car.GetCurrentEdgeId()].cells[car.cellNum] = Constants.NO_CAR;
+
+        for (int i = car.cellNum; i <= car.cellNum + Constants.HALF_CAR_SIZE && i < edgesMap[car.GetCurrentEdgeId()].cells.Count; i++)
+            edgesMap[car.GetCurrentEdgeId()].cells[i] = Constants.NO_CAR;
+
+        for (int i = car.cellNum; i >= car.cellNum - Constants.HALF_CAR_SIZE && i >= 0; i--)
+            edgesMap[car.GetCurrentEdgeId()].cells[i] = Constants.NO_CAR;
+
         int cellsToMove = car.velocity;
         while (cellsToMove > 0)
         {
@@ -267,9 +274,15 @@ public class SimulationProcessor : MonoBehaviour
                 }
             }
         }
-         
+
         var curEdgeId = car.GetCurrentEdgeId();
-        edgesMap[curEdgeId].cells[car.cellNum] = Constants.CAR_OBSTACLE;
+        //edgesMap[curEdgeId].cells[car.cellNum] = Constants.CAR_OBSTACLE;
+
+        for (int i = car.cellNum; i < car.cellNum + Constants.HALF_CAR_SIZE && i < edgesMap[curEdgeId].cells.Count; i++)
+            edgesMap[curEdgeId].cells[i] = Constants.CAR_OBSTACLE;
+
+        for (int i = car.cellNum; i >= car.cellNum + Constants.HALF_CAR_SIZE && i >= 0; i--)
+            edgesMap[curEdgeId].cells[i] = Constants.CAR_OBSTACLE;
 
         var newpos = Vector3.Lerp(edgesMap[curEdgeId].start.transform.position,
             edgesMap[curEdgeId].finish.transform.position,
@@ -291,7 +304,7 @@ public class SimulationProcessor : MonoBehaviour
         Dictionary<int, bool> visited = new Dictionary<int, bool>();
         Node cur = start;
         visited.Add(start.id, true);
-    
+
         while (true)
         {
             List<Edge> inceds = new List<Edge>();
@@ -323,7 +336,7 @@ public class SimulationProcessor : MonoBehaviour
     }
 
     private Edge GetRandomEdge(List<Edge> dic)
-    { 
+    {
         System.Random rand = new System.Random();
         int randomKey = rand.Next(dic.Count);
         return dic[randomKey];
