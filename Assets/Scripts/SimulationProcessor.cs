@@ -11,7 +11,7 @@ public class SimulationProcessor : MonoBehaviour
     public long currentTimeStep = 0;
     public int N = 15;
     public int M = 15;
-    public int carsNum = 50;
+    public int carsNum = 200;
 
     public List<Node> nodes = new List<Node>();
     public List<Edge> edges = new List<Edge>();
@@ -40,7 +40,7 @@ public class SimulationProcessor : MonoBehaviour
     private List<TrafficLight> lights = new List<TrafficLight>();
 
     private int maxCarId = 0;
-    private int timeStepsPerFrame = 1;
+    private int timeStepsPerFrame = 200;
 
     private int[,] posMatrix;
     private int[,] adjMatrix;
@@ -196,6 +196,8 @@ public class SimulationProcessor : MonoBehaviour
     private void DoStep(Car car)
     {
 
+        if (car.toRemove)
+            return;
 
         // Acceleration
         if (car.velocity < Constants.SPEED_LIMIT)
@@ -260,6 +262,7 @@ public class SimulationProcessor : MonoBehaviour
                 if (car.curEdgeNumInPath >= car.path.Count)
                 {
                     Destroy(car.gameObject);
+                    car.toRemove = true;
                     return;
                 }
             }

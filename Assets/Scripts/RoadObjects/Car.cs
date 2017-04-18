@@ -13,6 +13,8 @@ public class Car : MonoBehaviour
     public int curEdgeNumInPath = 0;
     public int cellNum = 0;
 
+    public bool toRemove = false;
+
     // cell/s
     public int velocity = 0;
 
