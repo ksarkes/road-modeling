@@ -4,10 +4,10 @@ using UnityEngine;
 
 public class TrafficLight : Node
 {
-    List<Edge> positiveEdges;
-    List<Edge> negativeEdges;
+    public List<Edge> positiveEdges = new List<Edge>();
+    public List<Edge> negativeEdges = new List<Edge>();
 
-    private int stepsBetweenTurns = 100;
+    private int stepsBetweenTurns = 200;
     private long lastSwitchTime = 0;
 
     private bool open = false;
@@ -26,9 +26,12 @@ public class TrafficLight : Node
         open = !open;
     }
 
-    public bool isOpen()
+    public bool isOpen(Edge edge)
     {
-       // return true;
-        return open;
+        // return true;
+        if (positiveEdges.Contains(edge))
+            return open;
+        else
+            return !open;
     }
 }

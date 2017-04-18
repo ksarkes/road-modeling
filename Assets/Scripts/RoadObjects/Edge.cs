@@ -33,10 +33,10 @@ public class Edge {
             cells.Add(Constants.NO_CAR);
     }
 
-    public bool HasObstacle(int cellNum)
+    public bool HasObstacle(int cellNum, Edge edge)
     {
         return cells[cellNum] != Constants.NO_CAR
-            || cellNum == 0 && !start.isOpen()
-            || cellNum == cells.Count - 1 && !finish.isOpen(); 
+            || cellNum == 0 && !start.isOpen(edge)
+            || cellNum == cells.Count - 1 && !finish.isOpen(edge); 
     }
 }
