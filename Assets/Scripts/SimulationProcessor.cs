@@ -297,9 +297,9 @@ public class SimulationProcessor : MonoBehaviour
         }else if (edgesMap[curEdgeId].finish.transform.position.x != edgesMap[curEdgeId].start.transform.position.x)
         {
             if (edgesMap[curEdgeId].finish.transform.position.x > edgesMap[curEdgeId].start.transform.position.x)
-                newpos.y += Constants.CAR_OFFSET;
-            else
                 newpos.y -= Constants.CAR_OFFSET;
+            else
+                newpos.y += Constants.CAR_OFFSET;
         }
         car.transform.position = newpos;
         var angle = Vector3.Angle(new Vector3(0, 1) - new Vector3(0, 0),
