@@ -40,7 +40,6 @@ public class SimulationProcessor : MonoBehaviour
     private List<TrafficLight> lights = new List<TrafficLight>();
 
     private int maxCarId = 0;
-    private int timeStepsPerFrame = 200;
 
     private int[,] posMatrix;
     private int[,] adjMatrix;
@@ -174,12 +173,13 @@ public class SimulationProcessor : MonoBehaviour
 
         //    cars.Add(newCar);
         //}
-        for (int i = 0; i < timeStepsPerFrame; i++)
+        for (int i = 0; i < Constants.TIME_STEPS_PER_FRAME; i++)
         {
             CalculateStep();
-            foreach (var j in lightsMap.Values)
-                j.TrySwitch();
         }
+
+        foreach (var j in lightsMap.Values)
+            j.TrySwitch();
     }
 
     private void CalculateStep()

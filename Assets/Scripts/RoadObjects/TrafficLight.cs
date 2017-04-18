@@ -14,7 +14,7 @@ public class TrafficLight : Node
 
     public void TrySwitch()
     {
-        if (SimulationProcessor.Instance.currentTimeStep - lastSwitchTime > (long)stepsBetweenTurns)
+        if (SimulationProcessor.Instance.currentTimeStep - lastSwitchTime > (long) Constants.TIME_STEPS_PER_FRAME * 100)
         {
             Switch();
             lastSwitchTime = SimulationProcessor.Instance.currentTimeStep;
