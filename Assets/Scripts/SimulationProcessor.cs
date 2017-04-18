@@ -288,10 +288,19 @@ public class SimulationProcessor : MonoBehaviour
             edgesMap[curEdgeId].finish.transform.position,
              (float)car.cellNum / (float)edgesMap[curEdgeId].cells.Count);
 
-        //if (edgesMap[curEdgeNum].finish.transform.position.y > edgesMap[curEdgeNum].start.transform.position.y)
-        //    newpos.x += 0.5f;
-        //else
-        //    newpos.x -= 0.5f;
+        if (edgesMap[curEdgeId].finish.transform.position.y != edgesMap[curEdgeId].start.transform.position.y)
+        {
+            if (edgesMap[curEdgeId].finish.transform.position.y > edgesMap[curEdgeId].start.transform.position.y)
+                newpos.x += Constants.CAR_OFFSET;
+            else
+                newpos.x -= Constants.CAR_OFFSET;
+        }else if (edgesMap[curEdgeId].finish.transform.position.x != edgesMap[curEdgeId].start.transform.position.x)
+        {
+            if (edgesMap[curEdgeId].finish.transform.position.x > edgesMap[curEdgeId].start.transform.position.x)
+                newpos.y += Constants.CAR_OFFSET;
+            else
+                newpos.y -= Constants.CAR_OFFSET;
+        }
         car.transform.position = newpos;
         var angle = Vector3.Angle(new Vector3(0, 1) - new Vector3(0, 0),
             edgesMap[curEdgeId].finish.transform.position - edgesMap[curEdgeId].start.transform.position);
