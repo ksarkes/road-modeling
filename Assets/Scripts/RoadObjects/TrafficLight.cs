@@ -26,10 +26,9 @@ public class TrafficLight : Node
         open = !open;
     }
 
-    public bool isOpen(Edge edge)
+    public bool isOpen(Node other)
     {
-        // return true;
-        if (positiveEdges.Contains(edge))
+        if ((int)other.transform.position.x == (int)transform.position.x)
             return open;
         else
             return !open;

@@ -122,10 +122,10 @@ public class SimulationProcessor : MonoBehaviour
                         nodeIncEdges.Add(i.id, new List<Edge>());
                     nodeIncEdges[i.id].Add(edge);
 
-                    if ((int)i.transform.position.x == (int)lightsMap[j].transform.position.x)
-                        i.positiveEdges.Add(edge);
-                    else
-                        i.negativeEdges.Add(edge);
+                    //if ((int)i.transform.position.x == (int)lightsMap[j].transform.position.x)
+                    //    i.positiveEdges.Add(edge);
+                    //else
+                    //    i.negativeEdges.Add(edge);
 
                     //edge = new Edge(lightsMap[j], i);
                     //edgesMap.Add(edge.id, edge);
@@ -222,14 +222,14 @@ public class SimulationProcessor : MonoBehaviour
     {
         // Braking
         //int brakingLength = IntPow(car.velocity, 2);
-        int stepsLeft = car.velocity * 5;//+ brakingLength;
+        int V_BRAKE = 200;
+        int stepsLeft = car.velocity*11 ; //+ V_BRAKE;//+ brakingLength;
 
         var obsEgde = edgesMap[car.GetCurrentEdgeId()];
         int curEdgeNum = car.curEdgeNumInPath;
         int curCellNum = car.cellNum + Constants.HALF_CAR_SIZE;
 
         bool hasObstacle = false;
-
         while (stepsLeft > 0)
         {
             stepsLeft--;
@@ -238,7 +238,7 @@ public class SimulationProcessor : MonoBehaviour
             if (curCellNum >= obsEgde.cells.Count)
             {
                 curEdgeNum++;
-                curCellNum = 1 + 2 * Constants.HALF_CAR_SIZE; // 1, ибо 0 = светофор, который только что проехали
+                curCellNum = 2 + 2 * Constants.HALF_CAR_SIZE; // 1, ибо 0 = светофор, который только что проехали
 
                 // Достигли конца пути и не нашли препятствий
                 if (curEdgeNum == car.path.Count)
@@ -246,14 +246,14 @@ public class SimulationProcessor : MonoBehaviour
 
                 obsEgde = edgesMap[car.GetEdgeIdByPathNum(curEdgeNum)];
 
-                if (obsEgde.HasObstacleUntil(curCellNum, car.path[curEdgeNum]))
+                if (obsEgde.HasObstacleUntil(curCellNum))
                 {
                     hasObstacle = true;
                     break;
                 }
             }
 
-            if (obsEgde.HasObstacle(curCellNum, car.path[curEdgeNum]))
+            if (obsEgde.HasObstacle(curCellNum))
             {
                 hasObstacle = true;
                 break;
@@ -262,7 +262,9 @@ public class SimulationProcessor : MonoBehaviour
         }
 
         if (hasObstacle)
-            car.velocity -= ((stepsLeft) / 5);
+            //car.velocity -= ((stepsLeft) / 11);
+            //car.velocity -= V_BRAKE + 1;
+            car.velocity = 0;
     }
 
     private void Move(Car car)

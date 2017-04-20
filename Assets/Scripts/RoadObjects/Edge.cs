@@ -33,20 +33,21 @@ public class Edge {
             cells.Add(Constants.NO_CAR);
     }
 
-    public bool HasObstacle(int cellNum, Edge edge)
+    public bool HasObstacle(int cellNum)
     {
+        // cellNum == 0 никогда не происходит
         return cells[cellNum] != Constants.NO_CAR
-            || cellNum == 0 && !start.isOpen(edge)
-            || cellNum == cells.Count - 1 && !finish.isOpen(edge);
+            //|| cellNum == 0 && !start.isOpen(this)
+            || cellNum == cells.Count - 1 && !finish.isOpen(start);
     }
 
-    public bool HasObstacleUntil(int cellNum, Edge edge)
+    public bool HasObstacleUntil(int cellNum)
     {
         for (int i = 0; i <= cellNum; i++)
         {
             if (cells[i] != Constants.NO_CAR
-            || i == 0 && !start.isOpen(edge)
-            || i == cells.Count - 1 && !finish.isOpen(edge))
+            //|| i == 0 && !start.isOpen(this)
+            || i == cells.Count - 1 && !finish.isOpen(start))
                 return true;
         }
         return false;
