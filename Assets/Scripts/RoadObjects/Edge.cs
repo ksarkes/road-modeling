@@ -37,6 +37,18 @@ public class Edge {
     {
         return cells[cellNum] != Constants.NO_CAR
             || cellNum == 0 && !start.isOpen(edge)
-            || cellNum == cells.Count - 1 && !finish.isOpen(edge); 
+            || cellNum == cells.Count - 1 && !finish.isOpen(edge);
+    }
+
+    public bool HasObstacleUntil(int cellNum, Edge edge)
+    {
+        for (int i = 0; i <= cellNum; i++)
+        {
+            if (cells[i] != Constants.NO_CAR
+            || i == 0 && !start.isOpen(edge)
+            || i == cells.Count - 1 && !finish.isOpen(edge))
+                return true;
+        }
+        return false;
     }
 }

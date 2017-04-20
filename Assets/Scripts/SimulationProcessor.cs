@@ -199,7 +199,6 @@ public class SimulationProcessor : MonoBehaviour
             Accelerate(j);
             Brake(j);
             Move(j);
-            //DoStep(j);
         }
     }
 
@@ -213,124 +212,14 @@ public class SimulationProcessor : MonoBehaviour
             car.velocity += 1;
         else
             car.velocity = Constants.SPEED_LIMIT;
-    }
-
-    private void Brake(Car car)
-    {
-        int stepsLeft = car.velocity * 5;//+ brakingLength;
-
-        var obsEgde = edgesMap[car.GetCurrentEdgeId()];
-        int curEdgeNum = car.curEdgeNumInPath;
-        int curCellNum = car.cellNum + Constants.HALF_CAR_SIZE;
-
-        bool hasObstacle = false;
-
-        while (stepsLeft > 0)
-        {
-            stepsLeft--;
-            curCellNum++;
-
-            if (curCellNum >= obsEgde.cells.Count)
-            {
-                curEdgeNum++;
-                curCellNum = 1; // 1, ибо 0 = светофор, который только что проехали
-
-                // Достигли конца пути и не нашли препятствий
-                if (curEdgeNum == car.path.Count)
-                    break;
-
-                obsEgde = edgesMap[car.GetEdgeIdByPathNum(curEdgeNum)];
-            }
-
-            if (obsEgde.HasObstacle(curCellNum, car.path[curEdgeNum]))
-            {
-                hasObstacle = true;
-                break;
-            }
-
-        }
-
-        if (hasObstacle)
-            car.velocity -= ((stepsLeft) / 5);
-    }
-
-    private void Move(Car car)
-    {
-        edgesMap[car.GetCurrentEdgeId()].cells[car.cellNum] = Constants.NO_CAR;
-
-        for (int i = car.cellNum; i <= car.cellNum + Constants.HALF_CAR_SIZE && i < edgesMap[car.GetCurrentEdgeId()].cells.Count; i++)
-            edgesMap[car.GetCurrentEdgeId()].cells[i] = Constants.NO_CAR;
-
-        for (int i = car.cellNum; i >= car.cellNum - Constants.HALF_CAR_SIZE && i >= 0; i--)
-            edgesMap[car.GetCurrentEdgeId()].cells[i] = Constants.NO_CAR;
-
-        int cellsToMove = car.velocity;
-        while (cellsToMove > 0)
-        {
-            cellsToMove--;
-            car.cellNum++;
-            if (car.cellNum >= car.path[car.curEdgeNumInPath].cellsNum)
-            {
-                car.cellNum = 1;
-                car.curEdgeNumInPath++;
-                if (car.curEdgeNumInPath >= car.path.Count)
-                {
-                    Destroy(car.gameObject);
-                    car.toRemove = true;
-                    return;
-                }
-            }
-        }
-
-        var curEdgeId = car.GetCurrentEdgeId();
-        //edgesMap[curEdgeId].cells[car.cellNum] = Constants.CAR_OBSTACLE;
-
-        for (int i = car.cellNum; i < car.cellNum + Constants.HALF_CAR_SIZE && i < edgesMap[curEdgeId].cells.Count; i++)
-            edgesMap[curEdgeId].cells[i] = Constants.CAR_OBSTACLE;
-
-        for (int i = car.cellNum; i >= car.cellNum + Constants.HALF_CAR_SIZE && i >= 0; i--)
-            edgesMap[curEdgeId].cells[i] = Constants.CAR_OBSTACLE;
-
-        var newpos = Vector3.Lerp(edgesMap[curEdgeId].start.transform.position,
-            edgesMap[curEdgeId].finish.transform.position,
-             (float)car.cellNum / (float)edgesMap[curEdgeId].cells.Count);
-
-        if (edgesMap[curEdgeId].finish.transform.position.y != edgesMap[curEdgeId].start.transform.position.y)
-        {
-            if (edgesMap[curEdgeId].finish.transform.position.y > edgesMap[curEdgeId].start.transform.position.y)
-                newpos.x += Constants.CAR_OFFSET;
-            else
-                newpos.x -= Constants.CAR_OFFSET;
-        }
-        else if (edgesMap[curEdgeId].finish.transform.position.x != edgesMap[curEdgeId].start.transform.position.x)
-        {
-            if (edgesMap[curEdgeId].finish.transform.position.x > edgesMap[curEdgeId].start.transform.position.x)
-                newpos.y -= Constants.CAR_OFFSET;
-            else
-                newpos.y += Constants.CAR_OFFSET;
-        }
-        car.transform.position = newpos;
-        var angle = Vector3.Angle(new Vector3(0, 1) - new Vector3(0, 0),
-            edgesMap[curEdgeId].finish.transform.position - edgesMap[curEdgeId].start.transform.position);
-        car.transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle - 90.0f));
-    }
-
-    private void DoStep(Car car)
-    {
-
-        if (car.toRemove)
-            return;
-
-        // Acceleration
-        if (car.velocity < Constants.SPEED_LIMIT)
-            car.velocity += 1;
-        else
-            car.velocity = Constants.SPEED_LIMIT;
 
         //System.Random rand = new System.Random();
         //int r = Constants.SPEED_LIMIT / 3 / rand.Next(1, Constants.SPEED_LIMIT + 1);
         //car.velocity += r;
+    }
 
+    private void Brake(Car car)
+    {
         // Braking
         //int brakingLength = IntPow(car.velocity, 2);
         int stepsLeft = car.velocity * 5;//+ brakingLength;
@@ -349,13 +238,19 @@ public class SimulationProcessor : MonoBehaviour
             if (curCellNum >= obsEgde.cells.Count)
             {
                 curEdgeNum++;
-                curCellNum = 1; // 1 ибо 0 = светофор, который только что проехали
+                curCellNum = 1 + 2 * Constants.HALF_CAR_SIZE; // 1, ибо 0 = светофор, который только что проехали
 
                 // Достигли конца пути и не нашли препятствий
                 if (curEdgeNum == car.path.Count)
                     break;
 
                 obsEgde = edgesMap[car.GetEdgeIdByPathNum(curEdgeNum)];
+
+                if (obsEgde.HasObstacleUntil(curCellNum, car.path[curEdgeNum]))
+                {
+                    hasObstacle = true;
+                    break;
+                }
             }
 
             if (obsEgde.HasObstacle(curCellNum, car.path[curEdgeNum]))
@@ -367,8 +262,11 @@ public class SimulationProcessor : MonoBehaviour
         }
 
         if (hasObstacle)
-            car.velocity -= ((stepsLeft)/5);
+            car.velocity -= ((stepsLeft) / 5);
+    }
 
+    private void Move(Car car)
+    {
         // Move
         // Чистим за собой клетку
         edgesMap[car.GetCurrentEdgeId()].cells[car.cellNum] = Constants.NO_CAR;
@@ -406,6 +304,7 @@ public class SimulationProcessor : MonoBehaviour
         for (int i = car.cellNum; i >= car.cellNum + Constants.HALF_CAR_SIZE && i >= 0; i--)
             edgesMap[curEdgeId].cells[i] = Constants.CAR_OBSTACLE;
 
+        // Вертим корыто так, чтобы ехало рядом с ребром по правильной полосе
         var newpos = Vector3.Lerp(edgesMap[curEdgeId].start.transform.position,
             edgesMap[curEdgeId].finish.transform.position,
              (float)car.cellNum / (float)edgesMap[curEdgeId].cells.Count);
@@ -416,7 +315,8 @@ public class SimulationProcessor : MonoBehaviour
                 newpos.x += Constants.CAR_OFFSET;
             else
                 newpos.x -= Constants.CAR_OFFSET;
-        }else if (edgesMap[curEdgeId].finish.transform.position.x != edgesMap[curEdgeId].start.transform.position.x)
+        }
+        else if (edgesMap[curEdgeId].finish.transform.position.x != edgesMap[curEdgeId].start.transform.position.x)
         {
             if (edgesMap[curEdgeId].finish.transform.position.x > edgesMap[curEdgeId].start.transform.position.x)
                 newpos.y -= Constants.CAR_OFFSET;
@@ -428,7 +328,7 @@ public class SimulationProcessor : MonoBehaviour
             edgesMap[curEdgeId].finish.transform.position - edgesMap[curEdgeId].start.transform.position);
         car.transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle - 90.0f));
     }
-
+    
     public List<Edge> GetCarPath(Node start)
     {
         List<Edge> path = new List<Edge>();
