@@ -10,11 +10,11 @@ public class TrafficLight : Node
     private int stepsBetweenTurns = 200;
     private long lastSwitchTime = 0;
 
-    private bool open = false;
+    public bool open = false;
 
     public void TrySwitch()
     {
-        if (SimulationProcessor.Instance.currentTimeStep - lastSwitchTime > (long) Constants.TIME_STEPS_PER_FRAME * 100)
+        if (SimulationProcessor.Instance.currentTimeStep - lastSwitchTime > (long) Constants.TIME_STEPS_PER_FRAME * 300)
         {
             Switch();
             lastSwitchTime = SimulationProcessor.Instance.currentTimeStep;

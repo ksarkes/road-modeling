@@ -29,13 +29,24 @@ public class GraphGenerator
     private void GenerateRandomInitMatrix()
     {
         init = new int[N, M];
+        //init = new int[,] 
+        //{ 
+        //    {0, 0, 0, 0, 0, 0},
+        //    { 0,1}
+        //};
+
         backup = new int[N, M];
         System.Random rand = new System.Random();
         for (int i = 0; i < N; i++)
             for (int j = 0; j < M; j++)
             {
-                var rnd = UnityEngine.Random.Range(0.0f, 1.0f);
-                init[i, j] = rnd < generationMedian ? 1 : 0;
+                //var rnd = UnityEngine.Random.Range(0.0f, 1.0f);
+                //init[i, j] = rnd < generationMedian ? 1 : 0;
+                if (i == j || i % 5 == 0)
+                    init[i, j] = 1;
+                else
+                    init[i, j] = 0;
+
                 //if (i == j && i == 2 || i == 0 && j == 0)
                 //    init[i, j] = 1;
                 //else

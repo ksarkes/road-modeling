@@ -155,7 +155,7 @@ public class SimulationProcessor : MonoBehaviour
 
         for (int i = 0; i < carsNum; i++)
         {
-            var start = GetRandomNode();
+            var start = GetStartNode(i);
             // TODO: синхронизовать GetRandomNode и GetRandomEdge
             System.Threading.Thread.Sleep(10);
             var newCar = (Car)Instantiate(carPrefab);
@@ -332,13 +332,22 @@ public class SimulationProcessor : MonoBehaviour
             if (inceds.Count == 0)
                 break;
 
-            Edge newEdge = GetRandomEdge(inceds);
+            int num = inceds.Count;
+            Edge newEdge = inceds[start.id % num];
+
             visited.Add(newEdge.finish.id, true);
             path.Add(newEdge);
             cur = newEdge.finish;
         }
 
         return path;
+    }
+
+    public Node GetStartNode(int i)
+    {
+        List<int> keyList = new List<int>(lightsMap.Keys);
+        int key = keyList[i % lightsMap.Count];
+        return lightsMap[key];
     }
 
     public Node GetRandomNode()
