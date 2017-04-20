@@ -207,11 +207,17 @@ public class SimulationProcessor : MonoBehaviour
         if (car.toRemove)
             return;
 
+        
         // Acceleration
         if (car.velocity < Constants.SPEED_LIMIT)
             car.velocity += 1;
         else
             car.velocity = Constants.SPEED_LIMIT;
+
+        // Костыль для мгновенного сброса скорости до дозволенной знаком
+        int allowedSpeed = edgesMap[car.GetCurrentEdgeId()].SpeedLimit(car.cellNum);
+        if (allowedSpeed != Constants.NO_MODIF)
+            car.velocity = allowedSpeed;
 
         //System.Random rand = new System.Random();
         //int r = Constants.SPEED_LIMIT / 3 / rand.Next(1, Constants.SPEED_LIMIT + 1);

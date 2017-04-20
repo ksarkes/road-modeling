@@ -15,7 +15,9 @@ public class Edge {
 
     // элемент cells айдишник кара 
     public List<int> cells = new List<int>();
-    
+
+    public List<int> cellsModif = new List<int>();
+
     public Edge(TrafficLight start, TrafficLight finish)
     {
         this.start = start;
@@ -31,6 +33,14 @@ public class Edge {
 
         for (int i = 0; i < cellsNum; i++)
             cells.Add(Constants.NO_CAR);
+
+        for (int i = 0; i < cellsNum; i++)
+        {
+            if (start.id == 1 && finish.id == 2 && i > cellsNum / 2)
+                cellsModif.Add(Constants.ALLOWED_SPEED_SIGN);
+            else
+                cellsModif.Add(Constants.NO_MODIF);
+        }
     }
 
     public bool HasObstacle(int cellNum)
@@ -51,5 +61,10 @@ public class Edge {
                 return true;
         }
         return false;
+    }
+
+    public int SpeedLimit(int cellNum)
+    {
+        return cellsModif[cellNum];
     }
 }
