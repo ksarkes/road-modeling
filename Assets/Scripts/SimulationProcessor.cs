@@ -110,6 +110,15 @@ public class SimulationProcessor : MonoBehaviour
         newLight = Instantiate(trafficLightPrefab);
         //trafficLightPrefab.transform.position = new Vector3(x - posMatrix.GetLength(1) / 2, y - posMatrix.GetLength(0) / 2);
         newLight.transform.position = new Vector3(x * Constants.DST_MULT, -y * Constants.DST_MULT);
+
+        // Энгельса
+        if (i == 2 && j == 4)
+        {
+            newLight.transform.position += new Vector3(1, 0);
+        }
+        if (j == 4)
+            newLight.transform.position -= new Vector3(1, 0);
+
         newLight.transform.parent = lightsParent;
         newLight.id = id;
         newLight.i = i;
@@ -161,17 +170,6 @@ public class SimulationProcessor : MonoBehaviour
         {
             foreach (var j in i.connectedNodes)
             {
-                // Энгельса
-                if ((i.i == 1 && j.i == 2 || i.i == 2 && j.i == 1) &&
-                    (i.j == 4 && j.j == 4) && !isHandledEngelsaStreet)
-                {
-                    isHandledEngelsaStreet = true;
-                    if (i.i == 1)
-                        j.transform.position += new Vector3(1, 0);
-                    else
-                        i.transform.position += new Vector3(1, 0);
-                }
-
                 DrawLine(i.transform.position, j.transform.position);
             }
         }
@@ -384,7 +382,13 @@ public class SimulationProcessor : MonoBehaviour
         car.transform.position = newpos;
         var angle = Vector3.Angle(new Vector3(0, 1) - new Vector3(0, 0),
             edgesMap[curEdgeId].finish.transform.position - edgesMap[curEdgeId].start.transform.position);
-        car.transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle - 90.0f));
+
+        // Подпорка для Энгельса
+        if (edgesMap[curEdgeId].start.i == 1 && edgesMap[curEdgeId].start.j == 4 
+            && edgesMap[curEdgeId].finish.i == 2 && edgesMap[curEdgeId].finish.j == 4)
+            car.transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle - 45.0f));
+        else 
+            car.transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle - 90.0f));
     }
 
     public List<Edge> GetCarPath(Node start)
