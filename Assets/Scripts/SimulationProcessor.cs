@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,6 +13,7 @@ public class SimulationProcessor : MonoBehaviour
     public int N = 15;
     public int M = 15;
     public int carsNum = 200;
+    public int helperThreadsNum = 4;
 
     public List<Node> nodes = new List<Node>();
     public List<Edge> edges = new List<Edge>();
@@ -19,6 +21,8 @@ public class SimulationProcessor : MonoBehaviour
     public Dictionary<int, Edge> edgesMap = new Dictionary<int, Edge>();
     public Dictionary<int, Car> carsMap = new Dictionary<int, Car>();
     private Dictionary<int, List<Edge>> nodeIncEdges = new Dictionary<int, List<Edge>>();
+    private List<List<Car>> carByThreads = new List<List<Car>>();
+
 
     public List<Node> way = new List<Node>();
 
@@ -145,7 +149,7 @@ public class SimulationProcessor : MonoBehaviour
         }
     }
 
-    void Start()
+    private IEnumerator Start()
     {
         GenerateGraph();
         ConnectNodes();
@@ -164,7 +168,19 @@ public class SimulationProcessor : MonoBehaviour
             newCar.start = start;
             newCar.transform.position = start.transform.position;
         }
+        yield return null;
+        yield return null;
+        for (int i = 0; i < helperThreadsNum; i++)
+            carByThreads.Add(new List<Car>());
+        var carList = cars.ToList();
+        for (int i = 0; i < carList.Count; i += helperThreadsNum)
+        {
+            for (int j = 0; j < helperThreadsNum && i + j < (carList.Count); j++)
+                carByThreads[j].Add(carList[i + j]);
+        }
+
     }
+    
 
     private long LastGenerationTime = 0;
 
@@ -180,9 +196,13 @@ public class SimulationProcessor : MonoBehaviour
         //}
         for (int i = 0; i < Constants.TIME_STEPS_PER_FRAME; i++)
         {
-            CalculateStep();
+            //CalculateStep();
+            MultiThreadCalculateStep();
+            foreach (var j in actionsForMainThread)
+                j();
+            actionsForMainThread.Clear();
         }
-
+        ApplyCachedTrasforms();
         foreach (var j in lightsMap.Values)
             j.TrySwitch();
     }
@@ -202,12 +222,52 @@ public class SimulationProcessor : MonoBehaviour
         }
     }
 
+    private void MultiThreadCalculateStep()
+    {
+        List<Thread> threads = new List<Thread>();
+        for(int i = 0; i < helperThreadsNum; i++)
+        {
+            var thread = new Thread(()=>Map(carByThreads[i], Accelerate));
+            thread.Start();
+            threads.Add(thread);
+        }
+        foreach (var i in threads)
+            i.Join();
+
+        threads.Clear();
+        for (int i = 0; i < helperThreadsNum; i++)
+        {
+            var thread = new Thread(() => Map(carByThreads[i], Brake));
+            thread.Start();
+            threads.Add(thread);
+        }
+        foreach (var i in threads)
+            i.Join();
+
+        threads.Clear();
+        for (int i = 0; i < helperThreadsNum; i++)
+        {
+            var thread = new Thread(() => Map(carByThreads[i], Move));
+            thread.Start();
+            threads.Add(thread);
+        }
+        foreach (var i in threads)
+            i.Join();
+
+    }
+
+    private void Map(List<Car> cars, Action<Car> func)
+    {
+        foreach (var i in cars)
+            func(i);
+    }
+
     private void Accelerate(Car car)
     {
         if (car.toRemove)
             return;
 
-        
+
         // Acceleration
         if (car.velocity < Constants.SPEED_LIMIT)
             car.velocity += 1;
@@ -229,7 +289,7 @@ public class SimulationProcessor : MonoBehaviour
         // Braking
         //int brakingLength = IntPow(car.velocity, 2);
         int V_BRAKE = 200;
-        int stepsLeft = car.velocity*11 ; //+ V_BRAKE;//+ brakingLength;
+        int stepsLeft = car.velocity * 11; //+ V_BRAKE;//+ brakingLength;
 
         var obsEgde = edgesMap[car.GetCurrentEdgeId()];
         int curEdgeNum = car.curEdgeNumInPath;
@@ -273,6 +333,7 @@ public class SimulationProcessor : MonoBehaviour
             car.velocity = 0;
     }
 
+    private List<Action> actionsForMainThread = new List<Action>();
     private void Move(Car car)
     {
         // Move
@@ -296,7 +357,7 @@ public class SimulationProcessor : MonoBehaviour
                 car.curEdgeNumInPath++;
                 if (car.curEdgeNumInPath >= car.path.Count)
                 {
-                    Destroy(car.gameObject);
+                    actionsForMainThread.Add(() => { Destroy(car.gameObject); });
                     car.toRemove = true;
                     return;
                 }
@@ -313,30 +374,33 @@ public class SimulationProcessor : MonoBehaviour
             edgesMap[curEdgeId].cells[i] = Constants.CAR_OBSTACLE;
 
         // Вертим корыто так, чтобы ехало рядом с ребром по правильной полосе
-        var newpos = Vector3.Lerp(edgesMap[curEdgeId].start.transform.position,
-            edgesMap[curEdgeId].finish.transform.position,
+        var newpos = Vector3.Lerp(edgesMap[curEdgeId].start.cachedPos,
+            edgesMap[curEdgeId].finish.cachedPos,
              (float)car.cellNum / (float)edgesMap[curEdgeId].cells.Count);
 
-        if (edgesMap[curEdgeId].finish.transform.position.y != edgesMap[curEdgeId].start.transform.position.y)
+        if (edgesMap[curEdgeId].finish.cachedPos.y != edgesMap[curEdgeId].start.cachedPos.y)
         {
-            if (edgesMap[curEdgeId].finish.transform.position.y > edgesMap[curEdgeId].start.transform.position.y)
+            if (edgesMap[curEdgeId].finish.cachedPos.y > edgesMap[curEdgeId].start.cachedPos.y)
                 newpos.x += Constants.CAR_OFFSET;
             else
                 newpos.x -= Constants.CAR_OFFSET;
         }
-        else if (edgesMap[curEdgeId].finish.transform.position.x != edgesMap[curEdgeId].start.transform.position.x)
+        else if (edgesMap[curEdgeId].finish.cachedPos.x != edgesMap[curEdgeId].start.cachedPos.x)
         {
-            if (edgesMap[curEdgeId].finish.transform.position.x > edgesMap[curEdgeId].start.transform.position.x)
+            if (edgesMap[curEdgeId].finish.cachedPos.x > edgesMap[curEdgeId].start.cachedPos.x)
                 newpos.y -= Constants.CAR_OFFSET;
             else
                 newpos.y += Constants.CAR_OFFSET;
         }
-        car.transform.position = newpos;
+        //car.transform.position = newpos;
+        car.cachedpPosition = newpos;
         var angle = Vector3.Angle(new Vector3(0, 1) - new Vector3(0, 0),
-            edgesMap[curEdgeId].finish.transform.position - edgesMap[curEdgeId].start.transform.position);
-        car.transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle - 90.0f));
+            edgesMap[curEdgeId].finish.cachedPos - edgesMap[curEdgeId].start.cachedPos);
+
+        car.cachedRotation = Quaternion.Euler(new Vector3(0, 0, angle - 90.0f));
+        // car.transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle - 90.0f));
     }
-    
+
     public List<Edge> GetCarPath(Node start)
     {
         List<Edge> path = new List<Edge>();
@@ -401,5 +465,14 @@ public class SimulationProcessor : MonoBehaviour
             pow >>= 1;
         }
         return ret;
+    }
+
+    private void ApplyCachedTrasforms()
+    {
+        foreach (var i in cars)
+        {
+            i.transform.position = i.cachedpPosition;
+            i.transform.rotation = i.cachedRotation;
+        }
     }
 }

@@ -15,6 +15,9 @@ public class Car : MonoBehaviour
 
     public bool toRemove = false;
 
+    public Vector3 cachedpPosition;
+    public Quaternion cachedRotation;
+
     // cell/s
     public int velocity = 0;
 

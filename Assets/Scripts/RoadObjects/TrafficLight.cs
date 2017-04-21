@@ -28,7 +28,7 @@ public class TrafficLight : Node
 
     public bool isOpen(Node other)
     {
-        if ((int)other.transform.position.x == (int)transform.position.x)
+        if ((int)other.cachedPos.x == (int)cachedPos.x)
             return open;
         else
             return !open;

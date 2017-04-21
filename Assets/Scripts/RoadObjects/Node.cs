@@ -8,6 +8,7 @@ using UnityEngine;
 public class Node : MonoBehaviour
 {
     public int id;
+    public Vector3 cachedPos;
 
     public void Awake()
     {
@@ -19,6 +20,11 @@ public class Node : MonoBehaviour
 
     }
 
+    private void Start()
+    {
+        cachedPos = transform.position;
+
+    }
 
     public List<Node> connectedNodes = new List<Node>();
 
