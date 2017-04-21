@@ -36,7 +36,16 @@ public class Edge {
 
         for (int i = 0; i < cellsNum; i++)
         {
-            if (start.id == 1 && finish.id == 2 && i > cellsNum / 2)
+            // Знаки ограничения на Анохина, Ленина (на половине отрезка)
+            if ((start.id == 15 && finish.id == 16 ||
+                start.id == 16 && finish.id == 15 ||
+                start.id == 11 && finish.id == 27 ||
+                start.id == 27 && finish.id == 11) 
+                && i > cellsNum / 2)
+                cellsModif.Add(Constants.ALLOWED_SPEED_SIGN);
+            // Кусок Красной
+            else if (start.id == 4 && finish.id == 5 ||
+                start.id == 5 && finish.id == 4)
                 cellsModif.Add(Constants.ALLOWED_SPEED_SIGN);
             else
                 cellsModif.Add(Constants.NO_MODIF);

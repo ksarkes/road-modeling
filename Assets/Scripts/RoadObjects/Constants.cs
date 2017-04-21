@@ -4,7 +4,7 @@ using System.Collections.Generic;
 public class Constants
 {
     public static int NO_CAR = -1; 
-    public static int ALLOWED_SPEED_SIGN = 2;
+    public static int ALLOWED_SPEED_SIGN = 6;
     public static int NO_MODIF = -1;
     public static int CAR_OBSTACLE = 1;
     public static int HALF_CAR_SIZE = 100;
