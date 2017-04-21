@@ -55,6 +55,9 @@ public class SimulationProcessor : MonoBehaviour
 
     public Dictionary<int, TrafficLight> lightsMap = new Dictionary<int, TrafficLight>();
 
+    private System.Random nodeRand = new System.Random();
+    private System.Random pathRand = new System.Random();
+
     private SimulationProcessor()
     {
         Instance = this;
@@ -64,15 +67,7 @@ public class SimulationProcessor : MonoBehaviour
     {
         nodes.Add(node);
     }
-
-    public void OnCarCreate(Car car)
-    {
-        maxCarId++;
-        car.id = maxCarId;
-        cars.Add(car);
-        carsMap.Add(car.id, car);
-    }
-
+    
     public void OnCarDestroy(Car car)
     {
         cars.Remove(car);
@@ -129,7 +124,7 @@ public class SimulationProcessor : MonoBehaviour
             newLight.isJustNode = true;
             newLight.GetComponent<SpriteRenderer>().enabled = false;
         }
-
+        newLight.StartSwitchActions();
         lightsMap.Add(newLight.id, newLight);
         return newLight;
     }
@@ -165,7 +160,6 @@ public class SimulationProcessor : MonoBehaviour
     
     private void DrawLines()
     {
-        bool isHandledEngelsaStreet = false;
         foreach (var i in lightsMap.Values)
         {
             foreach (var j in i.connectedNodes)
@@ -186,13 +180,15 @@ public class SimulationProcessor : MonoBehaviour
         for (int i = 0; i < carsNum; i++)
         {
             var start = GetStartNode(i);
-            // TODO: синхронизовать GetRandomNode и GetRandomEdge
-            System.Threading.Thread.Sleep(10);
             var newCar = (Car)Instantiate(carPrefab);
 
+            maxCarId++;
+            newCar.id = maxCarId;
             newCar.transform.parent = carParent;
             newCar.start = start;
             newCar.transform.position = start.transform.position;
+            cars.Add(newCar);
+            carsMap.Add(newCar.id, newCar);
         }
         StartCoroutine(speedChangeCoroutine());
     }
@@ -214,8 +210,8 @@ public class SimulationProcessor : MonoBehaviour
             CalculateStep();
         }
 
-        foreach (var j in lightsMap.Values)
-            j.TrySwitch();
+        //foreach (var j in lightsMap.Values)
+        //    j.TrySwitch();
 
     }
 
@@ -391,13 +387,14 @@ public class SimulationProcessor : MonoBehaviour
             car.transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle - 90.0f));
     }
 
-    public List<Edge> GetCarPath(Node start)
+    public List<Edge> GetCarPath(int carId, Node start)
     {
         List<Edge> path = new List<Edge>();
         Dictionary<int, bool> visited = new Dictionary<int, bool>();
         Node cur = start;
         visited.Add(start.id, true);
 
+        int i = 1;
         while (true)
         {
             List<Edge> inceds = new List<Edge>();
@@ -405,15 +402,21 @@ public class SimulationProcessor : MonoBehaviour
             foreach (var edge in nodeIncEdges[cur.id])
             {
                 if (!visited.ContainsKey(edge.finish.id) || !visited[edge.finish.id])
+                {
                     inceds.Add(edge);
+                    // Для Ленина вероятность больше
+                    if (edge.finish.i == 1)
+                    {
+                        inceds.Add(edge);
+                        inceds.Add(edge);
+                    }
+                }
             }
 
             if (inceds.Count == 0)
                 break;
-
-            int num = inceds.Count;
-            Edge newEdge = inceds[start.id % num];
-
+            
+            Edge newEdge = inceds[pathRand.Next(0, inceds.Count)];
             visited.Add(newEdge.finish.id, true);
             path.Add(newEdge);
             cur = newEdge.finish;
@@ -424,9 +427,29 @@ public class SimulationProcessor : MonoBehaviour
 
     public Node GetStartNode(int i)
     {
-        List<int> keyList = new List<int>(lightsMap.Keys);
-        int key = keyList[i % lightsMap.Count];
-        return lightsMap[key];
+        //List<int> keyList = new List<int>(lightsMap.Keys);
+        //int key = keyList[i % lightsMap.Count];
+        List<int> startPoints = new List<int>();
+        startPoints.Add(10);
+        startPoints.Add(10);
+        startPoints.Add(10);
+        startPoints.Add(10);
+        startPoints.Add(2);
+        startPoints.Add(2);
+        startPoints.Add(2);
+        startPoints.Add(5);
+        startPoints.Add(5);
+        startPoints.Add(5);
+        startPoints.Add(22);
+        startPoints.Add(24);
+        startPoints.Add(25);
+        startPoints.Add(27);
+        startPoints.Add(28);
+        startPoints.Add(28);
+        startPoints.Add(29);
+        startPoints.Add(20);
+        return lightsMap[startPoints[nodeRand.Next(0, startPoints.Count)]];
+        //return lightsMap[startPoints[i % startPoints.Count]];
     }
 
     public Node GetRandomNode()

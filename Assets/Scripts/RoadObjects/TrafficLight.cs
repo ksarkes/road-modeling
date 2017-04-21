@@ -18,11 +18,25 @@ public class TrafficLight : Node
     public int i;
     public int j;
 
+    public void StartSwitchActions()
+    {
+        new System.Threading.Thread(() =>
+        {
+            while (true)
+            {
+                System.Threading.Thread.Sleep(5000);
+                Switch();
+            }
+        }).Start();
+    }
+
+    [System.Obsolete]
     public void TrySwitch()
     {
         if (SimulationProcessor.Instance.currentTimeStep - lastSwitchTime > (long) Constants.TIME_STEPS_PER_FRAME * 300)
         {
             Switch();
+            Debug.Log(SimulationProcessor.Instance.currentTimeStep - lastSwitchTime);
             lastSwitchTime = SimulationProcessor.Instance.currentTimeStep;
         }
     }

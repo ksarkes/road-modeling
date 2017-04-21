@@ -20,8 +20,7 @@ public class Car : MonoBehaviour
 
     private void Start()
     {
-        path = SimulationProcessor.Instance.GetCarPath(start);
-        SimulationProcessor.Instance.OnCarCreate(this);
+        path = SimulationProcessor.Instance.GetCarPath(id, start);
     }
 
     private void OnDestroy()
