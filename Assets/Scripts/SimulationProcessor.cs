@@ -20,6 +20,10 @@ public class SimulationProcessor : MonoBehaviour
     public Dictionary<int, Car> carsMap = new Dictionary<int, Car>();
     private Dictionary<int, List<Edge>> nodeIncEdges = new Dictionary<int, List<Edge>>();
 
+    private float averageVelocity = 0;
+    private int fullSpeedStep = 0;
+    private float fullSpeedAll = 0;
+
     public List<Node> way = new List<Node>();
 
     [Header("Parents")]
@@ -35,11 +39,15 @@ public class SimulationProcessor : MonoBehaviour
     public Car carPrefab;
     public GameObject linePrefab;
 
+    [SerializeField]
+    private Text averageSpeedLabel;
+
     private List<Edge> edgeway;
     private List<CarGenerator> generators = new List<CarGenerator>();
     private List<TrafficLight> lights = new List<TrafficLight>();
 
     private int maxCarId = 0;
+    private long lastSpeedCalcStep = 0;
 
     private int[,] posMatrix;
     private int[,] adjMatrix;
@@ -164,6 +172,7 @@ public class SimulationProcessor : MonoBehaviour
             newCar.start = start;
             newCar.transform.position = start.transform.position;
         }
+        StartCoroutine(speedChangeCoroutine());
     }
 
     private long LastGenerationTime = 0;
@@ -185,6 +194,18 @@ public class SimulationProcessor : MonoBehaviour
 
         foreach (var j in lightsMap.Values)
             j.TrySwitch();
+
+    }
+
+    private IEnumerator speedChangeCoroutine()
+    {
+        while (true)
+        {
+            averageSpeedLabel.text = "Average Speed: " + ((int) (averageVelocity * 6)).ToString();
+            yield return new WaitForSeconds(1f);
+            fullSpeedAll = 0f;
+            lastSpeedCalcStep = currentTimeStep;
+        }
     }
 
     private void CalculateStep()
@@ -194,12 +215,16 @@ public class SimulationProcessor : MonoBehaviour
         //    j.TryGenerate();
         //foreach (var j in lights)
         //    j.TrySwitch();
+        fullSpeedStep = 0;
         foreach (var j in cars)
         {
             Accelerate(j);
             Brake(j);
             Move(j);
         }
+        fullSpeedAll += (float) fullSpeedStep / cars.Count;
+        averageVelocity = fullSpeedAll / (currentTimeStep - lastSpeedCalcStep);
+
     }
 
     private void Accelerate(Car car)
@@ -207,7 +232,7 @@ public class SimulationProcessor : MonoBehaviour
         if (car.toRemove)
             return;
 
-        
+
         // Acceleration
         if (car.velocity < Constants.SPEED_LIMIT)
             car.velocity += 1;
@@ -229,7 +254,7 @@ public class SimulationProcessor : MonoBehaviour
         // Braking
         //int brakingLength = IntPow(car.velocity, 2);
         int V_BRAKE = 200;
-        int stepsLeft = car.velocity*11 ; //+ V_BRAKE;//+ brakingLength;
+        int stepsLeft = car.velocity * 11; //+ V_BRAKE;//+ brakingLength;
 
         var obsEgde = edgesMap[car.GetCurrentEdgeId()];
         int curEdgeNum = car.curEdgeNumInPath;
@@ -275,6 +300,7 @@ public class SimulationProcessor : MonoBehaviour
 
     private void Move(Car car)
     {
+        fullSpeedStep += car.velocity;
         // Move
         // Чистим за собой клетку
         edgesMap[car.GetCurrentEdgeId()].cells[car.cellNum] = Constants.NO_CAR;
@@ -292,7 +318,7 @@ public class SimulationProcessor : MonoBehaviour
             car.cellNum++;
             if (car.cellNum >= car.path[car.curEdgeNumInPath].cellsNum)
             {
-                car.cellNum = 1;
+                car.cellNum = 1; //+ Constants.HALF_CAR_SIZE;
                 car.curEdgeNumInPath++;
                 if (car.curEdgeNumInPath >= car.path.Count)
                 {
@@ -336,7 +362,7 @@ public class SimulationProcessor : MonoBehaviour
             edgesMap[curEdgeId].finish.transform.position - edgesMap[curEdgeId].start.transform.position);
         car.transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle - 90.0f));
     }
-    
+
     public List<Edge> GetCarPath(Node start)
     {
         List<Edge> path = new List<Edge>();
