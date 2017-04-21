@@ -18,6 +18,6 @@ public class Node : MonoBehaviour
     }
 
 
-    public List<Node> connectedNodes = new List<Node>();
+    public List<TrafficLight> connectedNodes = new List<TrafficLight>();
 
 }

@@ -12,6 +12,12 @@ public class TrafficLight : Node
 
     public bool open = false;
 
+    public bool isJustNode = false;
+
+    // Positions in init matrix
+    public int i;
+    public int j;
+
     public void TrySwitch()
     {
         if (SimulationProcessor.Instance.currentTimeStep - lastSwitchTime > (long) Constants.TIME_STEPS_PER_FRAME * 300)
@@ -28,6 +34,8 @@ public class TrafficLight : Node
 
     public bool isOpen(Node other)
     {
+        if (isJustNode)
+            return true;
         if ((int)other.transform.position.x == (int)transform.position.x)
             return open;
         else

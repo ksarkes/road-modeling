@@ -49,8 +49,9 @@ public class SimulationProcessor : MonoBehaviour
     private int maxCarId = 0;
     private long lastSpeedCalcStep = 0;
 
-    private int[,] posMatrix;
+    private int[,] idsMatrix;
     private int[,] adjMatrix;
+    private int[,] initMatrix;
 
     public Dictionary<int, TrafficLight> lightsMap = new Dictionary<int, TrafficLight>();
 
@@ -94,21 +95,32 @@ public class SimulationProcessor : MonoBehaviour
     private void GenerateGraph()
     {
         var generator = new GraphGenerator(N, M);
-        generator.GenerateGraph(out posMatrix, out adjMatrix);
+        generator.GenerateGraph(out idsMatrix, out adjMatrix, out initMatrix);
         for (int i = 0; i < N; i++)
             for (int j = 0; j < M; j++)
-                if (posMatrix[i, j] > 0)
-                    CreateTrafficLight(j, i, posMatrix[i, j]);
+                if (idsMatrix[i, j] > 0)
+                    CreateTrafficLight(i, j, idsMatrix[i, j]);
     }
 
-    private TrafficLight CreateTrafficLight(int x, int y, int id)
+    private TrafficLight CreateTrafficLight(int i, int j, int id)
     {
+        int x = j;
+        int y = i;
         TrafficLight newLight;
         newLight = Instantiate(trafficLightPrefab);
         //trafficLightPrefab.transform.position = new Vector3(x - posMatrix.GetLength(1) / 2, y - posMatrix.GetLength(0) / 2);
         newLight.transform.position = new Vector3(x * Constants.DST_MULT, -y * Constants.DST_MULT);
         newLight.transform.parent = lightsParent;
         newLight.id = id;
+        newLight.i = i;
+        newLight.j = j;
+
+        if (initMatrix[i, j] == 2)
+        {
+            newLight.isJustNode = true;
+            newLight.GetComponent<SpriteRenderer>().enabled = false;
+        }
+
         lightsMap.Add(newLight.id, newLight);
         return newLight;
     }
@@ -141,13 +153,25 @@ public class SimulationProcessor : MonoBehaviour
             }
         }
     }
-
+    
     private void DrawLines()
     {
+        bool isHandledEngelsaStreet = false;
         foreach (var i in lightsMap.Values)
         {
             foreach (var j in i.connectedNodes)
             {
+                // Энгельса
+                if ((i.i == 1 && j.i == 2 || i.i == 2 && j.i == 1) &&
+                    (i.j == 4 && j.j == 4) && !isHandledEngelsaStreet)
+                {
+                    isHandledEngelsaStreet = true;
+                    if (i.i == 1)
+                        j.transform.position += new Vector3(1, 0);
+                    else
+                        i.transform.position += new Vector3(1, 0);
+                }
+
                 DrawLine(i.transform.position, j.transform.position);
             }
         }
@@ -254,7 +278,7 @@ public class SimulationProcessor : MonoBehaviour
         // Braking
         //int brakingLength = IntPow(car.velocity, 2);
         int V_BRAKE = 200;
-        int stepsLeft = car.velocity * 11; //+ V_BRAKE;//+ brakingLength;
+        int stepsLeft = car.velocity * 5; //+ V_BRAKE;//+ brakingLength;
 
         var obsEgde = edgesMap[car.GetCurrentEdgeId()];
         int curEdgeNum = car.curEdgeNumInPath;
