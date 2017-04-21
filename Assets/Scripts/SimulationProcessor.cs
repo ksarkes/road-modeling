@@ -353,7 +353,7 @@ public class SimulationProcessor : MonoBehaviour
             car.cellNum++;
             if (car.cellNum >= car.path[car.curEdgeNumInPath].cellsNum)
             {
-                car.cellNum = 1;
+                car.cellNum = 1 + Constants.HALF_CAR_SIZE;
                 car.curEdgeNumInPath++;
                 if (car.curEdgeNumInPath >= car.path.Count)
                 {
