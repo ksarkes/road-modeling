@@ -18,6 +18,18 @@ public class TrafficLight : Node
     public int i;
     public int j;
 
+    public Transform openIndicator;
+
+    private Quaternion positiveRotation;
+    private Quaternion negativeRotation;
+
+
+    private void Start()
+    {
+        positiveRotation = Quaternion.Euler(Vector3.zero);
+        negativeRotation = Quaternion.Euler(0, 0, 90);
+    }
+
     public void StartSwitchActions()
     {
         new System.Threading.Thread(() =>
@@ -30,10 +42,18 @@ public class TrafficLight : Node
         }).Start();
     }
 
+    public void Update()
+    {
+        if (open)
+            openIndicator.rotation = negativeRotation;
+        else
+            openIndicator.rotation = positiveRotation;
+    }
+
     [System.Obsolete]
     public void TrySwitch()
     {
-        if (SimulationProcessor.Instance.currentTimeStep - lastSwitchTime > (long) Constants.TIME_STEPS_PER_FRAME * 300)
+        if (SimulationProcessor.Instance.currentTimeStep - lastSwitchTime > (long)Constants.TIME_STEPS_PER_FRAME * 300)
         {
             Switch();
             Debug.Log(SimulationProcessor.Instance.currentTimeStep - lastSwitchTime);
@@ -43,6 +63,7 @@ public class TrafficLight : Node
 
     private void Switch()
     {
+
         open = !open;
     }
 
