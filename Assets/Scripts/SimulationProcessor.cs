@@ -42,6 +42,9 @@ public class SimulationProcessor : MonoBehaviour
     [SerializeField]
     private Text averageSpeedLabel;
 
+    [SerializeField]
+    private GameObject speedSignPrefab;
+
     private List<Edge> edgeway;
     private List<CarGenerator> generators = new List<CarGenerator>();
     private List<TrafficLight> lights = new List<TrafficLight>();
@@ -67,7 +70,7 @@ public class SimulationProcessor : MonoBehaviour
     {
         nodes.Add(node);
     }
-    
+
     public void OnCarDestroy(Car car)
     {
         cars.Remove(car);
@@ -157,7 +160,7 @@ public class SimulationProcessor : MonoBehaviour
             }
         }
     }
-    
+
     private void DrawLines()
     {
         foreach (var i in lightsMap.Values)
@@ -173,6 +176,7 @@ public class SimulationProcessor : MonoBehaviour
     {
         GenerateGraph();
         ConnectNodes();
+        DrawSpeedSigns();
 
         GraphGenerator.PrintMatrix(adjMatrix);
         DrawLines();
@@ -191,6 +195,37 @@ public class SimulationProcessor : MonoBehaviour
             carsMap.Add(newCar.id, newCar);
         }
         StartCoroutine(speedChangeCoroutine());
+    }
+
+    private void DrawSpeedSigns()
+    {
+        foreach (var i in edgesMap)
+        {
+            var e = i.Value;
+            for (int j = 0; j < e.cellsNum; j++)
+            {
+                // Знаки ограничения на Анохина, Ленина (на половине отрезка)
+                if ((e.start.id == 15 && e.finish.id == 16 ||
+                    e.start.id == 16 && e.finish.id == 15 ||
+                    e.start.id == 11 && e.finish.id == 27 ||
+                    e.start.id == 27 && e.finish.id == 11)
+                    && j == e.cellsNum / 2)
+                {
+                    var sign = Instantiate(speedSignPrefab);
+                    sign.transform.GetComponentInChildren<TextMesh>().text = Constants.ALLOWED_SPEED_SIGN.ToString();
+                    sign.transform.position = Vector3.Lerp(e.start.transform.position, e.finish.transform.position, (float)j / (float)e.cellsNum);
+                }
+                // Кусок Красной
+                else if ((e.start.id == 4 && e.finish.id == 5 ||
+                    e.start.id == 5 && e.finish.id == 4) && j == 0)
+                {
+                    var sign = Instantiate(speedSignPrefab);
+                    sign.transform.GetComponentInChildren<TextMesh>().text = Constants.ALLOWED_SPEED_SIGN.ToString();
+                    sign.transform.position = new Vector3(e.start.transform.position.x, e.start.transform.position.y + 0.2f, e.start.transform.position.z);
+
+                }
+            }
+        }
     }
 
     private long LastGenerationTime = 0;
@@ -219,7 +254,7 @@ public class SimulationProcessor : MonoBehaviour
     {
         while (true)
         {
-            averageSpeedLabel.text = "Average Speed: " + ((int) (averageVelocity * 6)).ToString();
+            averageSpeedLabel.text = "Average Speed: " + ((int)(averageVelocity * 6)).ToString();
             yield return new WaitForSeconds(1f);
             fullSpeedAll = 0f;
             lastSpeedCalcStep = currentTimeStep;
@@ -240,7 +275,7 @@ public class SimulationProcessor : MonoBehaviour
             Brake(j);
             Move(j);
         }
-        fullSpeedAll += (float) fullSpeedStep / cars.Count;
+        fullSpeedAll += (float)fullSpeedStep / cars.Count;
         averageVelocity = fullSpeedAll / (currentTimeStep - lastSpeedCalcStep);
 
     }
@@ -380,10 +415,10 @@ public class SimulationProcessor : MonoBehaviour
             edgesMap[curEdgeId].finish.transform.position - edgesMap[curEdgeId].start.transform.position);
 
         // Подпорка для Энгельса
-        if (edgesMap[curEdgeId].start.i == 1 && edgesMap[curEdgeId].start.j == 4 
+        if (edgesMap[curEdgeId].start.i == 1 && edgesMap[curEdgeId].start.j == 4
             && edgesMap[curEdgeId].finish.i == 2 && edgesMap[curEdgeId].finish.j == 4)
             car.transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle - 45.0f));
-        else 
+        else
             car.transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle - 90.0f));
     }
 
@@ -415,7 +450,7 @@ public class SimulationProcessor : MonoBehaviour
 
             if (inceds.Count == 0)
                 break;
-            
+
             Edge newEdge = inceds[pathRand.Next(0, inceds.Count)];
             visited.Add(newEdge.finish.id, true);
             path.Add(newEdge);
