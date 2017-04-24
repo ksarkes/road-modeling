@@ -23,6 +23,7 @@ public class SimulationProcessor : MonoBehaviour
     private float averageVelocity = 0;
     private int fullSpeedStep = 0;
     private float fullSpeedAll = 0;
+    private float fullSpeedAllTime = 0;
 
     public List<Node> way = new List<Node>();
 
@@ -41,6 +42,9 @@ public class SimulationProcessor : MonoBehaviour
 
     [SerializeField]
     private Text averageSpeedLabel;
+
+    [SerializeField]
+    private Text fullAverageSpeedLabel;
 
     [SerializeField]
     private GameObject speedSignPrefab;
@@ -251,11 +255,20 @@ public class SimulationProcessor : MonoBehaviour
 
     }
 
+    private int secondsPassed = 0;
     private IEnumerator speedChangeCoroutine()
     {
+        fullSpeedAllTime = 0;
+        yield return null;
         while (true)
         {
-            averageSpeedLabel.text = "Average Speed: " + ((int)(averageVelocity * 6)).ToString();
+
+            if (fullSpeedStep == 0)
+                StopAllCoroutines();
+            secondsPassed++;
+            fullSpeedAllTime += averageVelocity;
+            averageSpeedLabel.text = "Average Speed / sec: " + ((int)(averageVelocity * 6)).ToString();
+            fullAverageSpeedLabel.text = "Average speed Total: " + ((int)((fullSpeedAllTime / secondsPassed))*6).ToString();
             yield return new WaitForSeconds(1f);
             fullSpeedAll = 0f;
             lastSpeedCalcStep = currentTimeStep;
