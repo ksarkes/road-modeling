@@ -126,6 +126,7 @@ public class SimulationProcessor : MonoBehaviour
         {
             newLight.isJustNode = true;
             newLight.GetComponent<SpriteRenderer>().enabled = false;
+            newLight.openIndicator.GetComponent<SpriteRenderer>().enabled = false;
         }
         newLight.StartSwitchActions();
         lightsMap.Add(newLight.id, newLight);
@@ -212,7 +213,7 @@ public class SimulationProcessor : MonoBehaviour
                     && j == e.cellsNum / 2)
                 {
                     var sign = Instantiate(speedSignPrefab);
-                    sign.transform.GetComponentInChildren<TextMesh>().text = Constants.ALLOWED_SPEED_SIGN.ToString();
+                    sign.transform.GetComponentInChildren<TextMesh>().text = "40";
                     sign.transform.position = Vector3.Lerp(e.start.transform.position, e.finish.transform.position, (float)j / (float)e.cellsNum);
                 }
                 // Кусок Красной
@@ -220,7 +221,7 @@ public class SimulationProcessor : MonoBehaviour
                     e.start.id == 5 && e.finish.id == 4) && j == 0)
                 {
                     var sign = Instantiate(speedSignPrefab);
-                    sign.transform.GetComponentInChildren<TextMesh>().text = Constants.ALLOWED_SPEED_SIGN.ToString();
+                    sign.transform.GetComponentInChildren<TextMesh>().text = "40";
                     sign.transform.position = new Vector3(e.start.transform.position.x, e.start.transform.position.y + 0.2f, e.start.transform.position.z);
 
                 }
