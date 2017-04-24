@@ -45,6 +45,9 @@ public class SimulationProcessor : MonoBehaviour
 
     [SerializeField]
     private Text fullAverageSpeedLabel;
+    
+    [SerializeField]
+    private Text timer;
 
     [SerializeField]
     private GameObject speedSignPrefab;
@@ -179,6 +182,8 @@ public class SimulationProcessor : MonoBehaviour
 
     void Start()
     {
+        time = 0;
+
         GenerateGraph();
         ConnectNodes();
         DrawSpeedSigns();
@@ -235,6 +240,8 @@ public class SimulationProcessor : MonoBehaviour
 
     private long LastGenerationTime = 0;
 
+    private float time;
+
     private void Update()
     {
         //if (currentTimeStep - LastGenerationTime == 5)
@@ -244,7 +251,13 @@ public class SimulationProcessor : MonoBehaviour
         //    newCar.transform.position = transform.position;
 
         //    cars.Add(newCar);
-        //}
+        //}   timer -= Time.deltaTime;
+        if (cars.Count != 0)
+        {
+            time += Time.deltaTime;
+            timer.text = "Time: " + Math.Round(time, 2);
+        }
+
         for (int i = 0; i < Constants.TIME_STEPS_PER_FRAME; i++)
         {
             CalculateStep();
@@ -267,8 +280,8 @@ public class SimulationProcessor : MonoBehaviour
                 StopAllCoroutines();
             secondsPassed++;
             fullSpeedAllTime += averageVelocity;
-            averageSpeedLabel.text = "Average Speed / sec: " + ((int)(averageVelocity * 6)).ToString();
-            fullAverageSpeedLabel.text = "Average speed Total: " + ((int)((fullSpeedAllTime / secondsPassed))*6).ToString();
+            averageSpeedLabel.text = "Current average speed: " + ((int)(averageVelocity * 12)).ToString();
+            fullAverageSpeedLabel.text = "Total average speed: " + ((int)((fullSpeedAllTime / secondsPassed))*12).ToString();
             yield return new WaitForSeconds(1f);
             fullSpeedAll = 0f;
             lastSpeedCalcStep = currentTimeStep;
