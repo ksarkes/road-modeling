@@ -281,7 +281,7 @@ public class SimulationProcessor : MonoBehaviour
             secondsPassed++;
             fullSpeedAllTime += averageVelocity;
             averageSpeedLabel.text = "Current average speed: " + ((int)(averageVelocity * 12)).ToString();
-            fullAverageSpeedLabel.text = "Total average speed: " + ((int)((fullSpeedAllTime / secondsPassed))*12).ToString();
+            fullAverageSpeedLabel.text = "Total average speed: " + ((int)((fullSpeedAllTime / secondsPassed) * 12)).ToString();
             yield return new WaitForSeconds(1f);
             fullSpeedAll = 0f;
             lastSpeedCalcStep = currentTimeStep;

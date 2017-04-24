@@ -36,18 +36,28 @@ public class TrafficLight : Node
         {
             while (true)
             {
-                if (id > 10 && id < 18)
-                {
-                    if (open)
-                        System.Threading.Thread.Sleep(3000);
-                    else
-                        System.Threading.Thread.Sleep(7000);
-                }
-                else
-                {
-                    System.Threading.Thread.Sleep(5000);
-                }
 
+                //if (id > 10 && id < 18)
+                //{
+                //    if (open)
+                //        System.Threading.Thread.Sleep(3000);
+                //    else
+                //        System.Threading.Thread.Sleep(7000);
+                //}
+
+                //if (id == 11)
+                //    System.Threading.Thread.Sleep(3000);
+
+                //else if (id == 12)
+                //    if (open)
+                //        System.Threading.Thread.Sleep(3000);
+                //    else
+                //        System.Threading.Thread.Sleep(7000);
+                //else
+                //{
+                //    System.Threading.Thread.Sleep(5000);
+                //}
+                System.Threading.Thread.Sleep(5000);
                 Switch();
             }
         }).Start();
